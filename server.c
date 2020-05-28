@@ -53,8 +53,9 @@ int read_request(int connect_fd, message *request) {
         for (int i = 0; i < 9; ++i) {
             printf("%hhx ", buffer[i]);
         }
+        puts("\n");
     }
-    puts("\n");
+
     if (num <= 0) {
         if (DEBUG) puts("1");
         return CON_CLS; // Connection closed
