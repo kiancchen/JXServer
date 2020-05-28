@@ -49,7 +49,7 @@ int read_request(int connect_fd, message *request) {
     // Read the header and payload length
     uint8_t buffer[9];
     int num = recv(connect_fd, buffer, 9, 0);
-    if (DEBUG){
+    if (DEBUG) {
         for (int i = 0; i < 9; ++i) {
             printf("%hhx ", buffer[i]);
         }
@@ -196,13 +196,20 @@ void *connection_handler(void *arg) {
             send_error(data->connect_fd);
             break;
         }
+        if (error == LEN_ZERO) {
+            if (request->header->type == (unsigned) 0x0) {
+                shutdown(data->connect_fd, SHUT_RDWR);
+                close(data->connect_fd);
+                break;
+            }else{
+                close(data->connect_fd);
+                break;
+            }
+        }
 
         if (request->header->type == (unsigned) 0x0) {
             // Echo Functionality
-            if (error == LEN_ZERO) {
-                send_error(data->connect_fd);
-                break;
-            }
+
             uint8_t *response = malloc(sizeof(uint8_t) * (9 + request->length));
             // Copy the request
             msg_to_response(request, response);
@@ -211,10 +218,6 @@ void *connection_handler(void *arg) {
             // Send the response
             send(data->connect_fd, response, sizeof(uint8_t) * (9 + request->length), 0);
             free(response);
-        } else if (request->header->type == (unsigned) 0x0 && error == LEN_ZERO) {
-            shutdown(data->connect_fd, SHUT_RDWR);
-            close(data->connect_fd);
-
         } else {
             send_error(data->connect_fd);
             break;
