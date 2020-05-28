@@ -77,7 +77,7 @@ int read_request(int connect_fd, message *request) {
     }
     if (length == 0) {
         if (DEBUG) puts("3");
-        return LEN_ZERO; // invalid input
+        return CON_CLS; // invalid input
     }
 
     // Read the payload
@@ -189,7 +189,7 @@ void *connection_handler(void *arg) {
             close(data->connect_fd);
             break;
         }
-        if (error == 1) {
+        if (error == INVALID_MSG) {
             if (DEBUG) puts("7");
             // Error occurs
             send_error(data->connect_fd);
