@@ -62,9 +62,9 @@ int read_request(int connect_fd, message *request) {
     for (int i = 1; i < 8; ++i) {
         length = ((unsigned) buffer[i] << ((8u - i) * 8u)) | length;
     }
-//    if (length == 0) {
-//        return 1; // invalid input
-//    }
+    if (length == 0) {
+        return 1; // invalid input
+    }
 
     // Read the payload
     uint8_t *payload = malloc(sizeof(uint8_t) * length);
