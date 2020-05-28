@@ -70,6 +70,7 @@ int read_request(int connect_fd, message *request) {
     hd->type = buffer[0] >> 4u;
     hd->compression = buffer[0] >> 3u;
     hd->req_compre = buffer[0] >> 2u;
+    request->header = hd;
 
     // Read the length
     uint64_t length = buffer[8];
@@ -94,7 +95,7 @@ int read_request(int connect_fd, message *request) {
     }
 
     // Stores above received information
-    request->header = hd;
+
     request->length = length;
     request->payload = payload;
     return SUCCESS;
@@ -197,7 +198,7 @@ void *connection_handler(void *arg) {
             break;
         }
         if (error == LEN_ZERO) {
-            if (request->header->type == (unsigned) 0x0) {
+            if (request->header->type == (unsigned) 0x8) {
                 shutdown(data->connect_fd, SHUT_RDWR);
                 close(data->connect_fd);
                 break;
