@@ -35,6 +35,13 @@ struct data {
     message *msg;
 };
 
+size_t file_size(FILE *fp){
+    fseek(fp, 0, SEEK_END);
+    size_t sz = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    return sz;
+}
+
 /**
  *
  * @param connect_fd Connection file description
@@ -108,9 +115,7 @@ int read_request(int connect_fd, message *request) {
 void read_command(char *filename, struct in_addr *inaddr, uint16_t *port) {
     FILE *fp = fopen(filename, "rb");
     // get the length of the file
-    fseek(fp, 0, SEEK_END);
-    size_t sz = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
+    size_t sz = file_size(fp);
 
     // read from the file
     unsigned char *buffer = malloc(sizeof(unsigned char) * sz);
