@@ -81,6 +81,7 @@ int read_request(int connect_fd, message *request) {
         if (DEBUG) puts("3");
         return LEN_ZERO; // invalid input
     }
+    request->length = length;
 
     // Read the payload
     uint8_t *payload = malloc(sizeof(uint8_t) * length);
@@ -93,11 +94,8 @@ int read_request(int connect_fd, message *request) {
         if (DEBUG) puts("5");
         return INVALID_MSG; // invalid input
     }
-
-    // Stores above received information
-
-    request->length = length;
     request->payload = payload;
+
     return SUCCESS;
 }
 
@@ -197,20 +195,14 @@ void *connection_handler(void *arg) {
             send_error(data->connect_fd);
             break;
         }
-        if (error == LEN_ZERO) {
-            if (request->header->type == (unsigned) 0x8) {
-                shutdown(data->connect_fd, SHUT_RDWR);
-                close(data->connect_fd);
-                break;
-            }else{
-                close(data->connect_fd);
-                break;
-            }
-        }
+
 
         if (request->header->type == (unsigned) 0x0) {
+            if (error == LEN_ZERO) {
+                send_error(data->connect_fd);
+                break;
+            }
             // Echo Functionality
-
             uint8_t *response = malloc(sizeof(uint8_t) * (9 + request->length));
             // Copy the request
             msg_to_response(request, response);
@@ -219,6 +211,11 @@ void *connection_handler(void *arg) {
             // Send the response
             send(data->connect_fd, response, sizeof(uint8_t) * (9 + request->length), 0);
             free(response);
+        } else if (request->header->type == (unsigned) 0x8) {
+            shutdown(data->connect_fd, SHUT_RDWR);
+            close(data->connect_fd);
+            break;
+
         } else {
             send_error(data->connect_fd);
             break;
