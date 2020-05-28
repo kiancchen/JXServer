@@ -179,7 +179,6 @@ void *connection_handler(void *arg) {
 
         if (request->header->type == (unsigned) 0x0) {
             // Echo Functionality
-
             uint8_t *response = malloc(sizeof(uint8_t) * (9 + request->length));
             // Copy the request
             msg_to_response(request, response);
@@ -188,7 +187,13 @@ void *connection_handler(void *arg) {
             // Send the response
             send(data->connect_fd, response, sizeof(uint8_t) * (9 + request->length), 0);
             free(response);
-        } else {
+        } else if (request->header->type == (unsigned) 0x8){
+            shutdown(data->connect_fd, SHUT_RDWR);
+            close(data->connect_fd);
+            break;
+        }
+        else
+        {
             send_error(data->connect_fd);
             break;
         }
