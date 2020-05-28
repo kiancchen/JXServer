@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <pthread.h>
 
+#define DEBUG 0
 #define CON_CLS 0
 #define INVALID_MSG 1
 #define SUCCESS 2
@@ -48,17 +49,18 @@ int read_request(int connect_fd, message *request) {
     // Read the header and payload length
     uint8_t buffer[9];
     int num = recv(connect_fd, buffer, 9, 0);
-
-    for (int i = 0; i < 9; ++i) {
-        printf("%hhx ", buffer[i]);
+    if (DEBUG){
+        for (int i = 0; i < 9; ++i) {
+            printf("%hhx ", buffer[i]);
+        }
     }
     puts("\n");
     if (num <= 0) {
-        puts("1");
+        if (DEBUG) puts("1");
         return CON_CLS; // Connection closed
     }
     if (num != 9) {
-        puts("2");
+        if (DEBUG) puts("2");
         return INVALID_MSG; // invalid input
     }
 
@@ -74,7 +76,7 @@ int read_request(int connect_fd, message *request) {
         length = ((unsigned) buffer[i] << ((8u - i) * 8u)) | length;
     }
     if (length == 0) {
-        puts("3");
+        if (DEBUG) puts("3");
         return LEN_ZERO; // invalid input
     }
 
@@ -82,11 +84,11 @@ int read_request(int connect_fd, message *request) {
     uint8_t *payload = malloc(sizeof(uint8_t) * length);
     num = recv(connect_fd, payload, length, 0);
     if (num <= 0) {
-        puts("4");
+        if (DEBUG) puts("4");
         return CON_CLS; //Connection closed
     }
     if (num != length) {
-        puts("5");
+        if (DEBUG) puts("5");
         return INVALID_MSG; // invalid input
     }
 
@@ -182,13 +184,13 @@ void *connection_handler(void *arg) {
         int error = read_request(data->connect_fd, request);
 
         if (error == CON_CLS) {
-            puts("6");
+            if (DEBUG) puts("6");
             // Connection is closed
             close(data->connect_fd);
             break;
         }
         if (error == 1) {
-            puts("7");
+            if (DEBUG) puts("7");
             // Error occurs
             send_error(data->connect_fd);
             break;
@@ -196,7 +198,7 @@ void *connection_handler(void *arg) {
 
         if (request->header->type == (unsigned) 0x0) {
             // Echo Functionality
-            if (error == LEN_ZERO){
+            if (error == LEN_ZERO) {
                 send_error(data->connect_fd);
                 break;
             }
@@ -208,6 +210,10 @@ void *connection_handler(void *arg) {
             // Send the response
             send(data->connect_fd, response, sizeof(uint8_t) * (9 + request->length), 0);
             free(response);
+        } else if (request->header->type == (unsigned) 0x0 && error == LEN_ZERO) {
+            shutdown(data->connect_fd, SHUT_RDWR);
+            close(data->connect_fd);
+
         } else {
             send_error(data->connect_fd);
             break;
