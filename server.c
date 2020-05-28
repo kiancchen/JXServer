@@ -196,7 +196,6 @@ void *connection_handler(void *arg) {
             break;
         }
 
-
         if (request->header->type == (unsigned) 0x0) {
             if (error == LEN_ZERO) {
                 send_error(data->connect_fd);
