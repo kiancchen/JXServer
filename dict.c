@@ -1,6 +1,4 @@
 #include "dict.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 size_t file_size(FILE *fp) {
     fseek(fp, 0, SEEK_END);
