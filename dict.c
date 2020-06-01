@@ -71,30 +71,30 @@ void read_dict(struct dict *dict) {
 }
 
 
-int main(void) {
-    struct dict *dict = malloc(sizeof(struct dict));
-    read_dict(dict);
-
-//    for (int i = 0; i < 28; ++i) {
-//        if (get_bit(dict->code, i)) {
-//            printf("1");
-//        }else{
-//            printf("0");
+//int main(void) {
+//    struct dict *dict = malloc(sizeof(struct dict));
+//    read_dict(dict);
+//
+////    for (int i = 0; i < 28; ++i) {
+////        if (get_bit(dict->code, i)) {
+////            printf("1");
+////        }else{
+////            printf("0");
+////        }
+////    }
+//
+//    int end = 0;
+//    for (int i = 1; i < 257; ++i) {
+//        printf("Length for %x: %d\n", i - 1, dict->length[i]);
+//        printf("code: ");
+//        end += dict->length[i];
+//        for (int j = end - dict->length[i]; j < end; ++j) {
+//            if (get_bit(dict->code, j)) {
+//                printf("1");
+//            } else {
+//                printf("0");
+//            }
 //        }
+//        puts("");
 //    }
-
-    int end = 0;
-    for (int i = 1; i < 257; ++i) {
-        printf("Length for %x: %d\n", i - 1, dict->length[i]);
-        printf("code: ");
-        end += dict->length[i];
-        for (int j = end - dict->length[i]; j < end; ++j) {
-            if (get_bit(dict->code, j)) {
-                printf("1");
-            } else {
-                printf("0");
-            }
-        }
-        puts("");
-    }
 }
