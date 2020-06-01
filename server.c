@@ -206,7 +206,7 @@ void *connection_handler(void *arg) {
             // Copy the request
             msg_to_response(request, response);
             // Modify the header
-            response[0] = 0x1 << 4 | request->header->compression << 3 | request->header->req_compress << 2;
+            response[0] = 0x1 << 4 | request->header->compression << 3 | 0 << 2;
             // Send the response
             send(data->connect_fd, response, sizeof(uint8_t) * (9 + request->length), 0);
             free(response);
