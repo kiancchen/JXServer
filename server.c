@@ -10,6 +10,8 @@
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <pthread.h>
+#include "dict.h"
+
 
 #define DEBUG 0
 #define CON_CLS 0
@@ -20,7 +22,7 @@
 struct header {
     unsigned type: 4;
     unsigned compression: 1;
-    unsigned req_compre: 1;
+    unsigned req_compress: 1;
     unsigned  : 2;
 };
 
@@ -35,7 +37,8 @@ struct data {
     message *msg;
 };
 
-size_t file_size(FILE *fp){
+
+size_t file_size(FILE *fp) {
     fseek(fp, 0, SEEK_END);
     size_t sz = ftell(fp);
     fseek(fp, 0, SEEK_SET);
@@ -76,7 +79,7 @@ int read_request(int connect_fd, message *request) {
     struct header *hd = malloc(sizeof(struct header));
     hd->type = buffer[0] >> 4u;
     hd->compression = buffer[0] >> 3u;
-    hd->req_compre = buffer[0] >> 2u;
+    hd->req_compress = buffer[0] >> 2u;
     request->header = hd;
 
     // Read the length
@@ -147,7 +150,7 @@ void read_command(char *filename, struct in_addr *inaddr, uint16_t *port) {
 void msg_to_response(message *msg, uint8_t *response) {
     struct header *header = msg->header;
     // Convert the header to one byte of uint8_t
-    response[0] = header->type << 4 | header->compression << 3 | header->req_compre << 2;
+    response[0] = header->type << 4 | header->compression << 3 | header->req_compress << 2;
 
     // Convert the length of uint64_t to uint8_t[8] and copy to the response
     uint8_t length[8];
@@ -211,7 +214,7 @@ void *connection_handler(void *arg) {
             // Copy the request
             msg_to_response(request, response);
             // Modify the header
-            response[0] = 0x1 << 4 | request->header->compression << 3 | request->header->req_compre << 2;
+            response[0] = 0x1 << 4 | request->header->compression << 3 | request->header->req_compress << 2;
             // Send the response
             send(data->connect_fd, response, sizeof(uint8_t) * (9 + request->length), 0);
             free(response);
@@ -240,6 +243,8 @@ int main(int argc, char **argv) {
     uint16_t port;
     read_command(argv[1], &inaddr, &port);
 
+    struct dict *dict = malloc(sizeof(struct dict));
+    read_dict(dict);
     // Create socket, and check for error
     // AF_INET = this is an IPv4 socket
     // SOCK_STREAM = this is a TCP socket
