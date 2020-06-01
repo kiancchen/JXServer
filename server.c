@@ -37,14 +37,6 @@ struct data {
     message *msg;
 };
 
-
-size_t file_size(FILE *fp) {
-    fseek(fp, 0, SEEK_END);
-    size_t sz = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    return sz;
-}
-
 /**
  *
  * @param connect_fd Connection file description
