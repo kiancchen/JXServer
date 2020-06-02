@@ -4,7 +4,7 @@
 #include <string.h>
 
 #define upper_divide(a, b) a % b == 0? (a / b) : ((a / b) + 1)
-#define len_padding(a) (8 - (a % 8))
+#define len_padding(a) (a % 8) == 0 ? 0 : (8 - (a % 8))
 
 
 struct dict {
