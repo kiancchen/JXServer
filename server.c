@@ -13,17 +13,19 @@
 #include "dict.h"
 
 
-#define DEBUG 0
-#define CON_CLS 0
-#define INVALID_MSG 1
-#define SUCCESS 2
-#define LEN_ZERO 3
-#define make_header(type, com, req) type << 4 | com << 3 | req << 2
+#define DEBUG (0)
+#define CON_CLS (0)
+#define INVALID_MSG (1)
+#define SUCCESS (2)
+#define LEN_ZERO (3)
+#define make_header(type, com, req) (type << 4 | com << 3 | req << 2)
+#define HEADER_LENGTH (9)
+#define PAYLOAD_INDEX (81)
 
 
 struct header {
     unsigned type: 4;
-    unsigned compression: 1;
+    unsigned compressed: 1;
     unsigned req_compress: 1;
     unsigned  : 2;
 };
@@ -38,6 +40,10 @@ struct data {
     int connect_fd;
     message *msg;
 };
+
+
+struct dict dict;
+
 
 /**
  *
@@ -72,7 +78,7 @@ int read_request(int connect_fd, message *request) {
     // Convert first type and stores in the struct header
     struct header *hd = malloc(sizeof(struct header));
     hd->type = buffer[0] >> 4u;
-    hd->compression = buffer[0] >> 3u;
+    hd->compressed = buffer[0] >> 3u;
     hd->req_compress = buffer[0] >> 2u;
     request->header = hd;
 
@@ -136,39 +142,47 @@ void read_command(char *filename, struct in_addr *inaddr, uint16_t *port) {
     free(buffer);
 }
 
+
+void payload_len_to_uint8(const uint64_t src, uint8_t *dest) {
+    // Convert the length of uint64_t to uint8_t[8] and copy to the response
+    uint8_t length[8];
+    memcpy(length, &src, sizeof(uint64_t));
+    for (int i = 1; i < 9; i++) {
+        dest[i] = length[8 - i];
+    }
+}
+
 /**
  *
  * @param msg Source to be converted
  * @param response The list of uint8_t where stores the converted message
  */
-void msg_to_response(message *msg, uint8_t *response) {
+void msg_to_response(const message *msg, uint8_t *response) {
     struct header *header = msg->header;
     // Convert the header to one byte of uint8_t
-    response[0] = header->type << 4 | header->compression << 3 | header->req_compress << 2;
+    response[0] = make_header(header->type, header->compressed, header->req_compress);
 
-    // Convert the length of uint64_t to uint8_t[8] and copy to the response
-    uint8_t length[8];
-    memcpy(length, &msg->length, sizeof(msg->length));
-    for (int i = 1; i < 9; i++) {
-        response[i] = length[8 - i];
-    }
+    payload_len_to_uint8(msg->length, response);
+
     // Copy the payload
     for (int i = 0; i < msg->length; i++) {
         response[i + 9] = msg->payload[i];
     }
 }
 
+
 /**
  *
  * @param connect_fd connection file description
  */
 void send_error(int connect_fd) {
-    uint8_t error_header = (unsigned) 0xf << 4u;
+    uint8_t error_header = make_header(0xf, 0, 0);
     uint64_t error_payload = 0x0;
     send(connect_fd, &error_header, sizeof(uint8_t), 0);
     send(connect_fd, &error_payload, sizeof(uint64_t), 0);
     close(connect_fd);
 }
+
 
 /**
  *
@@ -199,20 +213,34 @@ void *connection_handler(void *arg) {
         }
 
         if (request->header->type == (unsigned) 0x0) {
+            // Echo Functionality
             if (error == LEN_ZERO) {
                 send_error(data->connect_fd);
                 break;
             }
-            // Echo Functionality
-            uint8_t *response = malloc(sizeof(uint8_t) * (9 + request->length));
-            // Copy the request
-            msg_to_response(request, response);
-            // Modify the header
-            response[0] = make_header(0x1, request->header->compression, 0);
+            uint8_t *response;
+            uint64_t length;
+            if (request->header->compressed == (unsigned) 0 && request->header->req_compress == (unsigned) 1) {
+                length = get_code_length(&dict, request->payload, request->length);
+                length = upper_divide(length, 8) + 1; // add the bytes of padding length
+                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
+                response[0] = make_header(0x1, 1, 0);
+                payload_len_to_uint8(length, response);
+                uint8_t *compressed = compress(&dict, request->payload, request->length);
+                response[HEADER_LENGTH] = *compressed;
+                length += HEADER_LENGTH;
 
-//            response[0] = 0x1 << 4 | request->header->compression << 3 | 0 << 2;
+            } else {
+                length = HEADER_LENGTH + request->length;
+                response = malloc(sizeof(uint8_t) * length);
+                // Copy the request
+                msg_to_response(request, response);
+                // Modify the header
+                response[0] = make_header(0x1, request->header->compressed, 0);
+            }
+
             // Send the response
-            send(data->connect_fd, response, sizeof(uint8_t) * (9 + request->length), 0);
+            send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
             free(response);
         } else if (request->header->type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
@@ -238,9 +266,8 @@ int main(int argc, char **argv) {
     struct in_addr inaddr;
     uint16_t port;
     read_command(argv[1], &inaddr, &port);
-
-    struct dict *dict = malloc(sizeof(struct dict));
     read_dict(dict);
+
     // Create socket, and check for error
     // AF_INET = this is an IPv4 socket
     // SOCK_STREAM = this is a TCP socket
