@@ -66,6 +66,20 @@ void read_dict(struct dict *dict) {
         }
         code_i++;
     }
+
+    for (int i = 1; i < 257; ++i) {
+//        printf("From %d to %d\n", dict.length[i - 1], dict.length[i]);
+        printf("Length for %x: %d\n", i - 1, dict->length[i] - dict->length[i - 1]);
+        printf("code: ");
+        for (int j = dict->length[i - 1]; j < dict->length[i]; ++j) {
+            if (get_bit(dict->code, j)) {
+                printf("1");
+            } else {
+                printf("0");
+            }
+        }
+        puts("");
+    }
 }
 
 int get_code_length(struct dict *dict, const uint8_t *payload, uint8_t payload_length) {
@@ -77,7 +91,7 @@ int get_code_length(struct dict *dict, const uint8_t *payload, uint8_t payload_l
     return code_length;
 }
 
-uint8_t* get_code(const struct dict *dict, const uint8_t payload) {
+uint8_t *get_code(const struct dict *dict, const uint8_t payload) {
     int start = dict->length[payload];
     int end = dict->length[payload + 1];
     int length = end - start;
@@ -94,7 +108,7 @@ uint8_t* get_code(const struct dict *dict, const uint8_t payload) {
     return code;
 }
 
-void set_code(uint8_t* dest, uint8_t* src, int start, int length){
+void set_code(uint8_t *dest, uint8_t *src, int start, int length) {
     for (int i = 0; i < length; ++i) {
         if (get_bit(src, i)) {
             set_bit(dest, start + i);
@@ -112,27 +126,27 @@ uint8_t *compress(struct dict *dict, const uint8_t *payloads, uint64_t payload_l
     int start = 0;
     for (int i = 0; i < payload_length; ++i) {
         uint8_t payload = payloads[i];
-        puts("Original: ");
-        for (int j = 0; j < 8; ++j) {
-            if (get_bit(&payload, j)) {
-                printf("1");
-            } else {
-                printf("0");
-            }
-        }
-        puts("");
-        puts("Code: ");
+//        puts("Original: ");
+//        for (int j = 0; j < 8; ++j) {
+//            if (get_bit(&payload, j)) {
+//                printf("1");
+//            } else {
+//                printf("0");
+//            }
+//        }
+//        puts("");
+//        puts("Code: ");
 
         int length = get_code_length(dict, &payload, 1);
         uint8_t *code = get_code(dict, payload);
-        for (int j = 0; j < length; ++j) {
-            if (get_bit(code, j)) {
-                printf("1");
-            } else {
-                printf("0");
-            }
-        }
-        puts("");
+//        for (int j = 0; j < length; ++j) {
+//            if (get_bit(code, j)) {
+//                printf("1");
+//            } else {
+//                printf("0");
+//            }
+//        }
+//        puts("");
         set_code(compressed, code, start, length);
         start += length;
     }
