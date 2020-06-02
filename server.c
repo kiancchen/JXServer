@@ -266,7 +266,7 @@ int main(int argc, char **argv) {
     struct in_addr inaddr;
     uint16_t port;
     read_command(argv[1], &inaddr, &port);
-    read_dict(dict);
+    read_dict(&dict);
 
     // Create socket, and check for error
     // AF_INET = this is an IPv4 socket
