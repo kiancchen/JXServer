@@ -112,7 +112,7 @@ uint8_t *compress(struct dict *dict, const uint8_t *payloads, uint64_t payload_l
     int start = 0;
     for (int i = 0; i < payload_length; ++i) {
         uint8_t payload = payloads[i];
-
+        puts("Original: ");
         for (int j = 0; j < 8; ++j) {
             if (get_bit(&payload, j)) {
                 printf("1");
@@ -121,10 +121,18 @@ uint8_t *compress(struct dict *dict, const uint8_t *payloads, uint64_t payload_l
             }
         }
         puts("");
+        puts("Code: ");
 
         int length = get_code_length(dict, &payload, 1);
         uint8_t *code = get_code(dict, payload);
-
+        for (int j = 0; j < length; ++j) {
+            if (get_bit(code, j)) {
+                printf("1");
+            } else {
+                printf("0");
+            }
+        }
+        puts("");
         set_code(compressed, code, start, length);
         start += length;
     }
