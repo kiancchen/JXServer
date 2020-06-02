@@ -183,6 +183,11 @@ void send_error(int connect_fd) {
     close(connect_fd);
 }
 
+void byte_copy(uint8_t* dest, uint8_t* src, int start, uint64_t length){
+    for (int i = 0; i < length; ++i) {
+        dest[start + i] = src[i];
+    }
+}
 
 /**
  *
@@ -227,6 +232,8 @@ void *connection_handler(void *arg) {
                 response[0] = make_header(0x1, 1, 0);
                 payload_len_to_uint8(length, response);
                 uint8_t *compressed = compress(&dict, request->payload, request->length);
+                byte_copy(response, compressed, 9, length);
+
                 response[HEADER_LENGTH] = *compressed;
                 length += HEADER_LENGTH;
 
