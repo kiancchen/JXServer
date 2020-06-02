@@ -183,7 +183,7 @@ void send_error(int connect_fd) {
     close(connect_fd);
 }
 
-void byte_copy(uint8_t* dest, uint8_t* src, int start, uint64_t length){
+void byte_copy(uint8_t *dest, uint8_t *src, int start, uint64_t length) {
     for (int i = 0; i < length; ++i) {
         dest[start + i] = src[i];
     }
@@ -228,6 +228,7 @@ void *connection_handler(void *arg) {
             if (request->header->compressed == (unsigned) 0 && request->header->req_compress == (unsigned) 1) {
                 length = get_code_length(&dict, request->payload, request->length);
                 length = upper_divide(length, 8) + 1; // add the bytes of padding length
+
                 response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
                 response[0] = make_header(0x1, 1, 0);
                 payload_len_to_uint8(length, response);
