@@ -46,6 +46,7 @@ void read_dict(struct dict *dict) {
     // init dict
 
     dict->code = malloc(sizeof(uint8_t) * code_sz);
+    memset(dict->code, 0, sizeof(uint8_t) * code_sz);
     dict->length[0] = 0;
     // store
     int end = 0;
