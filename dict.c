@@ -68,19 +68,19 @@ void read_dict(struct dict *dict) {
         code_i++;
     }
 
-    for (int i = 1; i < 257; ++i) {
-//        printf("From %d to %d\n", dict.length[i - 1], dict.length[i]);
-        printf("Length for %x: %d\n", i - 1, dict->length[i] - dict->length[i - 1]);
-        printf("code: ");
-        for (int j = dict->length[i - 1]; j < dict->length[i]; ++j) {
-            if (get_bit(dict->code, j)) {
-                printf("1");
-            } else {
-                printf("0");
-            }
-        }
-        puts("");
-    }
+//    for (int i = 1; i < 257; ++i) {
+////        printf("From %d to %d\n", dict.length[i - 1], dict.length[i]);
+//        printf("Length for %x: %d\n", i - 1, dict->length[i] - dict->length[i - 1]);
+//        printf("code: ");
+//        for (int j = dict->length[i - 1]; j < dict->length[i]; ++j) {
+//            if (get_bit(dict->code, j)) {
+//                printf("1");
+//            } else {
+//                printf("0");
+//            }
+//        }
+//        puts("");
+//    }
 }
 
 int get_code_length(struct dict *dict, const uint8_t *payload, uint8_t payload_length) {
