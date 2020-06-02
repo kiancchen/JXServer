@@ -67,6 +67,7 @@ void read_dict(struct dict *dict) {
         }
         code_i++;
     }
+    free(buffer);
 
 //    for (int i = 1; i < 257; ++i) {
 ////        printf("From %d to %d\n", dict.length[i - 1], dict.length[i]);
@@ -127,29 +128,14 @@ uint8_t *compress(struct dict *dict, const uint8_t *payloads, uint64_t payload_l
     int start = 0;
     for (int i = 0; i < payload_length; ++i) {
         uint8_t payload = payloads[i];
-//        puts("Original: ");
-//        for (int j = 0; j < 8; ++j) {
-//            if (get_bit(&payload, j)) {
-//                printf("1");
-//            } else {
-//                printf("0");
-//            }
-//        }
-//        puts("");
-//        puts("Code: ");
+
 
         int length = get_code_length(dict, &payload, 1);
         uint8_t *code = get_code(dict, payload);
-//        for (int j = 0; j < length; ++j) {
-//            if (get_bit(code, j)) {
-//                printf("1");
-//            } else {
-//                printf("0");
-//            }
-//        }
-//        puts("");
+
         set_code(compressed, code, start, length);
         start += length;
+        free(code);
     }
     compressed[total_length] = n_padding;
     return compressed;

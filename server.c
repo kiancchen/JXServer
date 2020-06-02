@@ -189,6 +189,30 @@ void byte_copy(uint8_t *dest, uint8_t *src, int start, uint64_t length) {
     }
 }
 
+void echo(const message *request, uint8_t **response, uint64_t *length) {
+    if (request->header->compressed == (unsigned) 0 && request->header->req_compress == (unsigned) 1) {
+        (*length) = get_code_length(&dict, request->payload, request->length);
+        (*length) = upper_divide((*length), 8) + 1; // add the bytes of padding length
+
+        (*response) = malloc(sizeof(uint8_t) * (HEADER_LENGTH + (*length)));
+        (*response)[0] = make_header(0x1, 1, 0);
+        payload_len_to_uint8((*length), (*response));
+        uint8_t *compressed = compress(&dict, request->payload, request->length);
+        byte_copy((*response), compressed, 9, (*length));
+
+        (*response)[HEADER_LENGTH] = *compressed;
+        (*length) += HEADER_LENGTH;
+        free(compressed);
+    } else {
+        (*length) = HEADER_LENGTH + request->length;
+        (*response) = malloc(sizeof(uint8_t) * (*length));
+        // Copy the request
+        msg_to_response(request, (*response));
+        // Modify the header
+        (*response)[0] = make_header(0x1, request->header->compressed, 0);
+    }
+}
+
 /**
  *
  * @param arg data where stores the connect_fd and request message
@@ -225,27 +249,7 @@ void *connection_handler(void *arg) {
             }
             uint8_t *response;
             uint64_t length;
-            if (request->header->compressed == (unsigned) 0 && request->header->req_compress == (unsigned) 1) {
-                length = get_code_length(&dict, request->payload, request->length);
-                length = upper_divide(length, 8) + 1; // add the bytes of padding length
-
-                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
-                response[0] = make_header(0x1, 1, 0);
-                payload_len_to_uint8(length, response);
-                uint8_t *compressed = compress(&dict, request->payload, request->length);
-                byte_copy(response, compressed, 9, length);
-
-                response[HEADER_LENGTH] = *compressed;
-                length += HEADER_LENGTH;
-
-            } else {
-                length = HEADER_LENGTH + request->length;
-                response = malloc(sizeof(uint8_t) * length);
-                // Copy the request
-                msg_to_response(request, response);
-                // Modify the header
-                response[0] = make_header(0x1, request->header->compressed, 0);
-            }
+            echo(request, &response, &length);
 
             // Send the response
             send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
