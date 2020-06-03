@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
@@ -8,10 +7,10 @@
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <stdint.h>
 #include <pthread.h>
 #include "dict.h"
-
+#include "helper_func.h"
+#include "directory.h"
 
 #define DEBUG (0)
 #define CON_CLS (0)
@@ -43,7 +42,7 @@ struct data {
 
 
 struct dict dict;
-
+char *dir_path;
 
 /**
  *
@@ -115,7 +114,7 @@ int read_request(int connect_fd, message *request) {
  * @param inaddr where stores the address
  * @param port  where stores the port
  */
-char* read_config(const char *filename, struct in_addr *inaddr, uint16_t *port) {
+char *read_config(const char *filename, struct in_addr *inaddr, uint16_t *port) {
     FILE *fp = fopen(filename, "rb");
     // get the length of the file
     size_t sz = file_size(fp);
@@ -151,15 +150,6 @@ char* read_config(const char *filename, struct in_addr *inaddr, uint16_t *port) 
 }
 
 
-void payload_len_to_uint8(const uint64_t src, uint8_t *dest) {
-    // Convert the length of uint64_t to uint8_t[8] and copy to the response
-    uint8_t length[8];
-    memcpy(length, &src, sizeof(uint64_t));
-    for (int i = 1; i < 9; i++) {
-        dest[i] = length[8 - i];
-    }
-}
-
 /**
  *
  * @param msg Source to be converted
@@ -191,11 +181,6 @@ void send_error(int connect_fd) {
     close(connect_fd);
 }
 
-void byte_copy(uint8_t *dest, const uint8_t *src, int start, uint64_t length) {
-    for (int i = 0; i < length; ++i) {
-        dest[start + i] = src[i];
-    }
-}
 
 void echo_handler(const message *request, uint8_t **response, uint64_t *length) {
     if (request->header->compressed == (unsigned) 0 && request->header->req_compress == (unsigned) 1) {
@@ -206,7 +191,8 @@ void echo_handler(const message *request, uint8_t **response, uint64_t *length) 
         (*response)[0] = make_header(0x1, 1, 0);
         payload_len_to_uint8((*length), (*response));
         uint8_t *compressed = compress(&dict, request->payload, request->length);
-        byte_copy((*response), compressed, 9, (*length));
+//        byte_copy((*response), compressed, 9, (*length));
+        memcpy(*response + 9, compressed, *length);
 
         (*response)[HEADER_LENGTH] = *compressed;
         (*length) += HEADER_LENGTH;
@@ -267,7 +253,16 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
-
+            uint8_t *response;
+            uint64_t length;
+            char *file_list = get_file_list(dir_path, &length);
+            response = malloc(sizeof(uint8_t) * (length + HEADER_LENGTH));
+            response[0] = make_header(0x3, 0, 0);
+            payload_len_to_uint8(length, response);
+            memcpy(response + 9, file_list, length);
+            length += HEADER_LENGTH;
+            send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+            free(response);
 
         } else if (request->header->type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
@@ -292,10 +287,8 @@ int main(int argc, char **argv) {
     // read the in_address and port from config file
     struct in_addr inaddr;
     uint16_t port;
-    char *dir_path = read_config(argv[1], &inaddr, &port);
+    dir_path = read_config(argv[1], &inaddr, &port);
     read_dict(&dict);
-    printf("%s\n", dir_path);
-
     // Create socket, and check for error
     // AF_INET = this is an IPv4 socket
     // SOCK_STREAM = this is a TCP socket
