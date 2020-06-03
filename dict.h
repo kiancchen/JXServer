@@ -22,6 +22,6 @@ uint8_t read_eight_bits(uint8_t *buffer, int start);
 
 void read_dict(struct dict *dict);
 
-int get_code_length(struct dict *dict, const uint8_t *payload, uint8_t payload_length);
+int get_code_length(struct dict *dict, const uint8_t *payload, uint64_t payload_length);
 
 uint8_t *compress(struct dict *dict, const uint8_t *payloads, uint64_t payload_length);

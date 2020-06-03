@@ -84,7 +84,7 @@ void read_dict(struct dict *dict) {
 //    }
 }
 
-int get_code_length(struct dict *dict, const uint8_t *payload, uint8_t payload_length) {
+int get_code_length(struct dict *dict, const uint8_t *payload, uint64_t payload_length) {
     int code_length = 0;
     for (int i = 0; i < payload_length; ++i) {
         uint8_t p = payload[i];
