@@ -276,8 +276,8 @@ void *connection_handler(void *arg) {
 
                 uint8_t *compressed = compress(&dict, payload, length);
 //        byte_copy((*response), compressed, 9, (*length));
-                memcpy(response + 9, compressed, length);
-                length += HEADER_LENGTH;
+                memcpy(response + 9, compressed, compressed_length);
+                length = compressed_length + HEADER_LENGTH;
                 free(compressed);
             }
 
