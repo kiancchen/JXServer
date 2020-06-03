@@ -115,14 +115,14 @@ int read_request(int connect_fd, message *request) {
  * @param inaddr where stores the address
  * @param port  where stores the port
  */
-void read_command(char *filename, struct in_addr *inaddr, uint16_t *port) {
+char* read_config(const char *filename, struct in_addr *inaddr, uint16_t *port) {
     FILE *fp = fopen(filename, "rb");
     // get the length of the file
     size_t sz = file_size(fp);
 
-    // read from the file
+    // read from the file as buffer
     unsigned char *buffer = malloc(sizeof(unsigned char) * sz);
-    fread(buffer, sizeof(buffer), 1, fp);
+    fread(buffer, sizeof(char), sz, fp);
     fclose(fp);
 
     // read the address and convert to the text represented address
@@ -139,7 +139,15 @@ void read_command(char *filename, struct in_addr *inaddr, uint16_t *port) {
     long port_long = strtol(raw_port, NULL, 10);
     // Convert port number to network byte order
     (*port) = htons((uint16_t) port_long);
+
+    // read the directory path
+    size_t dir_sz = sz - 6;
+    char *dir_path = malloc(sizeof(char) * (dir_sz + 1));
+    dir_path[dir_sz] = '\0';
+    memcpy(dir_path, buffer + 6, dir_sz);
+
     free(buffer);
+    return dir_path;
 }
 
 
@@ -183,13 +191,13 @@ void send_error(int connect_fd) {
     close(connect_fd);
 }
 
-void byte_copy(uint8_t *dest, uint8_t *src, int start, uint64_t length) {
+void byte_copy(uint8_t *dest, const uint8_t *src, int start, uint64_t length) {
     for (int i = 0; i < length; ++i) {
         dest[start + i] = src[i];
     }
 }
 
-void echo(const message *request, uint8_t **response, uint64_t *length) {
+void echo_handler(const message *request, uint8_t **response, uint64_t *length) {
     if (request->header->compressed == (unsigned) 0 && request->header->req_compress == (unsigned) 1) {
         (*length) = get_code_length(&dict, request->payload, request->length);
         (*length) = upper_divide((*length), 8) + 1; // add the bytes of padding length
@@ -249,11 +257,18 @@ void *connection_handler(void *arg) {
             }
             uint8_t *response;
             uint64_t length;
-            echo(request, &response, &length);
+            echo_handler(request, &response, &length);
 
             // Send the response
             send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
             free(response);
+        } else if (request->header->type == (unsigned) 0x2) {
+            if (error != LEN_ZERO) {
+                send_error(data->connect_fd);
+                break;
+            }
+
+
         } else if (request->header->type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
@@ -277,8 +292,9 @@ int main(int argc, char **argv) {
     // read the in_address and port from config file
     struct in_addr inaddr;
     uint16_t port;
-    read_command(argv[1], &inaddr, &port);
+    char *dir_path = read_config(argv[1], &inaddr, &port);
     read_dict(&dict);
+    printf("%s\n", dir_path);
 
     // Create socket, and check for error
     // AF_INET = this is an IPv4 socket
@@ -331,6 +347,7 @@ int main(int argc, char **argv) {
         pthread_t thread;
         pthread_create(&thread, NULL, connection_handler, data);
     }
+    free(dir_path);
     close(listenfd);
     return 0;
 }
