@@ -189,8 +189,8 @@ void echo_handler(const struct data *data, const message *request) {
         length = get_code_length(&dict, request->payload, request->length);
         length = upper_divide(length, 8) + 1; // add the bytes of padding length
 
-        (*response) = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
-        (*response)[0] = make_header(0x1, 1, 0);
+        response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
+        response[0] = make_header(0x1, 1, 0);
         payload_len_to_uint8(length, response);
         uint8_t *compressed = compress(&dict, request->payload, request->length);
 //        byte_copy((*response), compressed, 9, (*length));
@@ -204,7 +204,7 @@ void echo_handler(const struct data *data, const message *request) {
         // Copy the request
         msg_to_response(request, response);
         // Modify the header
-        (*response)[0] = make_header(0x1, request->header->compressed, 0);
+        response[0] = make_header(0x1, request->header->compressed, 0);
     }
     // Send the response
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
