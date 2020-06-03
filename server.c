@@ -217,6 +217,16 @@ void directory_list_handler(const struct data *data, const message *request) {
     // get the list of files
     char *file_list = get_file_list(dir_path, &length);
 
+    uint8_t *payload;
+    if (length == 0){
+        payload = 0x00;
+        length = 1;
+    }else{
+        // convert char* file_list to uint8_t
+        payload = malloc(sizeof(uint8_t) * length);
+        memcpy(payload, file_list, length);
+    }
+
     if (request->header->req_compress == 0) {
         // if compression not required
         response = malloc(sizeof(uint8_t) * (length + HEADER_LENGTH));
@@ -224,12 +234,10 @@ void directory_list_handler(const struct data *data, const message *request) {
         // fill the payload length bytes
         payload_len_to_uint8(length, response);
         // fill the payload as file list
-        memcpy(response + 9, file_list, length);
+        memcpy(response + 9, payload, length);
         length += HEADER_LENGTH;
     } else {
-        // convert char* file_list to uint8_t
-        uint8_t *payload = malloc(sizeof(uint8_t) * length);
-        memcpy(payload, file_list, length);
+
         // get the compressed length of payload
         uint64_t compressed_length = get_code_length(&dict, payload, length);
         compressed_length = upper_divide(compressed_length, 8) + 1;
@@ -245,9 +253,11 @@ void directory_list_handler(const struct data *data, const message *request) {
         length = compressed_length + HEADER_LENGTH;
         free(compressed);
     }
-    free(file_list);
+
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
     free(response);
+    free(file_list);
+    free(payload);
 }
 
 /**
