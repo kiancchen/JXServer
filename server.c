@@ -194,7 +194,7 @@ void echo_handler(const message *request, uint8_t **response, uint64_t *length) 
 //        byte_copy((*response), compressed, 9, (*length));
         memcpy(*response + 9, compressed, *length);
 
-        (*response)[HEADER_LENGTH] = *compressed;
+
         (*length) += HEADER_LENGTH;
         free(compressed);
     } else {
@@ -256,14 +256,31 @@ void *connection_handler(void *arg) {
             uint8_t *response;
             uint64_t length;
             char *file_list = get_file_list(dir_path, &length);
-            response = malloc(sizeof(uint8_t) * (length + HEADER_LENGTH));
-            response[0] = make_header(0x3, 0, 0);
-            payload_len_to_uint8(length, response);
-            memcpy(response + 9, file_list, length);
-            length += HEADER_LENGTH;
+            uint8_t *payload = malloc(sizeof(uint8_t) * length);
+            memcpy(payload, file_list, length);
+
+            if (request->header->req_compress == 0){
+                response = malloc(sizeof(uint8_t) * (length + HEADER_LENGTH));
+                response[0] = make_header(0x3, 0, 0);
+                payload_len_to_uint8(length, response);
+                memcpy(response + 9, file_list, length);
+                length += HEADER_LENGTH;
+            }else{
+                length = get_code_length(&dict, payload, length);
+                length = upper_divide(length, 8) + 1;
+                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
+                response[0] = make_header(0x3, 1, 0);
+                payload_len_to_uint8(length, response);
+
+                uint8_t *compressed = compress(&dict, payload, length);
+//        byte_copy((*response), compressed, 9, (*length));
+                memcpy(response + 9, compressed, length);
+                length += HEADER_LENGTH;
+                free(compressed);
+            }
+
             send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
             free(response);
-
         } else if (request->header->type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
