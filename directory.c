@@ -11,7 +11,7 @@ void get_dir_info(char *dir_path, int *num_files, uint64_t *filename_length) {
         while ((dir = readdir(d)) != NULL) {
             if (dir->d_type == DT_REG) {
                 *num_files += 1;
-                *filename_length += dir->d_namlen + 1;
+                *filename_length += strlen(dir->d_name) + 1;
             }
         }
         closedir(d);
@@ -30,9 +30,9 @@ void set_filenames(char *dir_path, char *filenames) {
         int start = 0;
         while ((dir = readdir(d)) != NULL) {
             if (dir->d_type == DT_REG) {
-                memcpy(filenames + start, dir->d_name, dir->d_namlen);
+                memcpy(filenames + start, dir->d_name, strlen(dir->d_name));
 //                byte_copy(filenames, dir->d_name, start, dir->d_namlen);
-                start += dir->d_namlen + 1;
+                start += strlen(dir->d_name) + 1;
                 filenames[start - 1] = 0x00;
             }
         }
