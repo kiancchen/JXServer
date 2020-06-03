@@ -256,8 +256,7 @@ void *connection_handler(void *arg) {
             uint8_t *response;
             uint64_t length;
             char *file_list = get_file_list(dir_path, &length);
-            uint8_t *payload = malloc(sizeof(uint8_t) * length);
-            memcpy(payload, file_list, length);
+
 
             if (request->header->req_compress == 0){
                 response = malloc(sizeof(uint8_t) * (length + HEADER_LENGTH));
@@ -266,11 +265,14 @@ void *connection_handler(void *arg) {
                 memcpy(response + 9, file_list, length);
                 length += HEADER_LENGTH;
             }else{
-                length = get_code_length(&dict, payload, length);
-                length = upper_divide(length, 8) + 1;
-                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
+                uint8_t *payload = malloc(sizeof(uint8_t) * length);
+                memcpy(payload, file_list, length);
+
+                uint64_t compressed_length = get_code_length(&dict, payload, length);
+                compressed_length = upper_divide(compressed_length, 8) + 1;
+                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
                 response[0] = make_header(0x3, 1, 0);
-                payload_len_to_uint8(length, response);
+                payload_len_to_uint8(compressed_length, response);
 
                 uint8_t *compressed = compress(&dict, payload, length);
 //        byte_copy((*response), compressed, 9, (*length));
