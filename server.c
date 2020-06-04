@@ -314,6 +314,10 @@ void *connection_handler(void *arg) {
             filename[strlen(dir_path)] = '/';
             memcpy(filename + strlen(dir_path) + 1, request->payload, request->length);
             FILE *f = fopen(filename, "r");
+            if (!f){
+                send_error(data->connect_fd);
+                break;
+            }
             size_t sz = file_size(f);
             fclose(f);
             // convert to network byte order
