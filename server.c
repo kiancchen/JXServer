@@ -305,19 +305,21 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
-            char *filename = malloc(sizeof(char) * request->length);
-            memcpy(filename, request->payload, request->length);
-            FILE *f = fopen(filename, "r");
-            size_t sz = file_size(f);
-            printf("%zu\n", sz);
-            fclose(f);
-            uint64_t size_64 = htons(sz);
-            printf("%lu\n", size_64);
-
-            uint8_t *response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + 8));
-            response[0] = make_header(0x5, 0, 0);
-            payload_len_to_uint8(8, response);
-
+            char *filename = malloc(sizeof(char) * (strlen(dir_path) + request->length));
+            memcpy(filename, dir_path, strlen(dir_path));
+            memcpy(filename + strlen(dir_path), request->payload, request->length);
+            printf("%s\n", filename);
+//            FILE *f = fopen(filename, "r");
+//            size_t sz = file_size(f);
+//            printf("%zu\n", sz);
+//            fclose(f);
+//            uint64_t size_64 = htons(sz);
+//            printf("%lu\n", size_64);
+//
+//            uint8_t *response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + 8));
+//            response[0] = make_header(0x5, 0, 0);
+//            payload_len_to_uint8(8, response);
+            free(filename);
         } else if (request->header->type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
