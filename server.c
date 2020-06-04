@@ -407,6 +407,7 @@ void *connection_handler(void *arg) {
             // fill the file info
             memcpy(response + 9, id, 4);
             memcpy(response + 13, starting, 8);
+
             uint64_to_uint8(*len_data, response + 21);
 //            memcpy(response + 21, length_data, 8);
             // fill the file data
