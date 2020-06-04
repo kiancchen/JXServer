@@ -312,7 +312,7 @@ void *connection_handler(void *arg) {
             printf("%zu\n", sz);
             fclose(f);
             uint64_t size_64 = htons(sz);
-            printf("%llu\n", size_64);
+            printf("%lu\n", size_64);
 
             uint8_t *response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + 8));
             response[0] = make_header(0x5, 0, 0);
