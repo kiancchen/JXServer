@@ -362,10 +362,10 @@ void *connection_handler(void *arg) {
         } else if (type == (unsigned) 0x6) {
             uint8_t *request_payload;
             uint64_t length;
-            if (request->header->compressed == 0){
+            if (request->header->compressed == 0) {
                 request_payload = request->payload;
                 length = request->length;
-            }else{
+            } else {
                 request_payload = decompress(&dict, request->payload, request->length, &length);
             }
 
@@ -431,7 +431,7 @@ void *connection_handler(void *arg) {
                 // Concatenate the payloads
                 uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
                 memcpy(uncompressed_payload, request_payload, 20);
-                memcpy(uncompressed_payload, payload, *len_data);
+                memcpy(uncompressed_payload + 20, payload, *len_data);
                 // Get the length of compressed payload
                 uint64_t compressed_length = get_code_length(&dict, uncompressed_payload, length);
                 compressed_length = upper_divide(compressed_length, 8) + 1;
