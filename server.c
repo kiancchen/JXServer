@@ -386,11 +386,22 @@ void *connection_handler(void *arg) {
                 break;
             }
             size_t sz = file_size(f);
-            if (*len_data >= sz){
+            if (*len_data >= sz) {
                 send_error(data->connect_fd);
                 break;
             }
-
+            uint64_t length = sz - *starting;
+            char *buffer = malloc(sizeof(char) * sz);
+            fread(buffer, sizeof(char), sz, f);
+            fclose(f);
+            uint8_t *payload = malloc(sizeof(uint8_t) * length);
+            memcpy(payload, buffer + *starting, length);
+            uint8_t *response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
+            response[0] = make_header(0x7, 0, 0);
+            uint64_to_uint8(htobe64(length), response + 1);
+            memcpy(response + 9, payload, length);
+            length += HEADER_LENGTH;
+            send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
 
         } else if (type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
