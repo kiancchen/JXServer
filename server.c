@@ -372,7 +372,6 @@ void *connection_handler(void *arg) {
             uint64_t len_data[1];
             memcpy(len_data, request->payload + 12, 8);
             *len_data = htobe64(*len_data);
-            uint64_t length_data = *len_data;
 //            printf("length_data: %lu\n", *len_data);
 
             uint64_t len_filename = request->length - 20;
