@@ -12,7 +12,6 @@
 #include "dict.h"
 #include "helper_func.h"
 #include "directory.h"
-#include <libkern/OSByteOrder.h>
 
 #define DEBUG (0)
 #define CON_CLS (0)
@@ -21,9 +20,6 @@
 #define LEN_ZERO (3)
 #define make_header(type, com, req) (type << 4 | com << 3 | req << 2)
 #define HEADER_LENGTH (9)
-#define PAYLOAD_INDEX (81)
-#define htobe64(x) OSSwapHostToBigInt64(x)
-
 
 struct header {
     unsigned type: 4;
