@@ -398,8 +398,8 @@ void *connection_handler(void *arg) {
             fclose(f);
             //make the payload
             uint64_t length = sz - *starting + 20;
-            uint8_t *payload = malloc(sizeof(uint8_t) * length);
-            memcpy(payload, buffer + *starting, length);
+            uint8_t *payload = malloc(sizeof(uint8_t) * *len_data);
+            memcpy(payload, buffer + *starting, *len_data);
             // make the response
             uint8_t *response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
             response[0] = make_header(0x7, 0, 0);
@@ -409,7 +409,7 @@ void *connection_handler(void *arg) {
             memcpy(response + 13, starting, 8);
             memcpy(response + 21, len_data, 8);
             // fill the file data
-            memcpy(response + 29, payload, length - 20);
+            memcpy(response + 29, payload, *len_data);
             length += HEADER_LENGTH;
             send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
             free(buffer);
