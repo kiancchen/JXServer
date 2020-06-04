@@ -362,11 +362,11 @@ void *connection_handler(void *arg) {
             printf("ID: %u\n", *id);
             uint64_t starting[1];
             memcpy(starting, request->payload + 4, 8);
-            printf("ID: %llu\n", *starting);
+            printf("ID: %lu\n", *starting);
 
             uint64_t len_data[1];
             memcpy(len_data, request->payload + 12, 8);
-            printf("length_data: %llu\n", *len_data);
+            printf("length_data: %lu\n", *len_data);
 
             uint64_t len_filename = request->length - 20;
 
