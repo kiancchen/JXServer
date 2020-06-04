@@ -390,6 +390,9 @@ void *connection_handler(void *arg) {
             }
             size_t sz = file_size(f);
             if ((*starting + *len_data) > sz) {
+                printf("Starting: %lu\n", *starting);
+                printf("len data: %lu\n", *len_data);
+
                 send_error(data->connect_fd);
                 break;
             }
