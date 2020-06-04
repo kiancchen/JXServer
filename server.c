@@ -231,7 +231,8 @@ void directory_list_handler(const struct data *data, const message *request) {
         response = malloc(sizeof(uint8_t) * (length + HEADER_LENGTH));
         response[0] = make_header(0x3, 0, 0);
         // fill the payload length bytes
-        payload_len_to_uint8(length, response);
+        uint64_to_uint8(htobe64(length), response + 1);
+//        payload_len_to_uint8(length, response);
         // fill the payload as file list
         memcpy(response + 9, payload, length);
         length += HEADER_LENGTH;
@@ -244,7 +245,8 @@ void directory_list_handler(const struct data *data, const message *request) {
         response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
         response[0] = make_header(0x3, 1, 0);
         // fill the payload length bytes
-        payload_len_to_uint8(compressed_length, response);
+        uint64_to_uint8(htobe64(compressed_length), response + 1);
+//        payload_len_to_uint8(compressed_length, response);
         // get the compressed payload and copy to the response
         uint8_t *compressed = compress(&dict, payload, length);
         memcpy(response + 9, compressed, compressed_length);
