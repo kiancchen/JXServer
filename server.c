@@ -379,7 +379,7 @@ void *connection_handler(void *arg) {
             memcpy(filename, dir_path, strlen(dir_path));
             filename[strlen(dir_path)] = '/';
             memcpy(filename + strlen(dir_path) + 1, request->payload + 20, len_filename);
-            printf("Filename: %s\n", filename);
+//            printf("Filename: %s\n", filename);
             FILE *f = fopen(filename, "r");
             if (!f) {
                 send_error(data->connect_fd);
