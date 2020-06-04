@@ -321,7 +321,7 @@ void *connection_handler(void *arg) {
             uint8_t *response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + 8));
             response[0] = make_header(0x5, 0, 0);
             payload_len_to_uint8(8, response);
-            uint64_to_uint8(size_64, response + 8);
+            uint64_to_uint8(size_64, response + 9);
 //            payload_len_to_uint8(size_64, response + 8);
             send(data->connect_fd, response, sizeof(uint8_t) * ((HEADER_LENGTH + 8)), 0);
             free(filename);
