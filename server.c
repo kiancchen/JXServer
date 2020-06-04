@@ -405,8 +405,8 @@ void *connection_handler(void *arg) {
             response[0] = make_header(0x7, 0, 0);
             uint64_to_uint8(htobe64(length), response + 1);
             // fill the file info
-            memcpy(response + 9, id, 4);
-            memcpy(response + 13, starting, 8);
+            memcpy(response + 9, request->payload, 4);
+            memcpy(response + 13, request->payload + 4, 8);
 //            printf("data length: %lu\n", *len_data);
             memcpy(response + 21, request->payload + 12, 8);
 //            uint64_to_uint8(*len_data, response + 21);
