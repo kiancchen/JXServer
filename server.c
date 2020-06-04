@@ -361,7 +361,7 @@ void *connection_handler(void *arg) {
             if (request->header->compressed == 0){
                 request_payload = request->payload;
             }else{
-                request_payload = decompress(&dict, request->payload, request->length);
+                request_payload = decompress(&dict, htobe64(request->payload), request->length);
             }
 
             printf("Payload length: %lu\n", request->length);
