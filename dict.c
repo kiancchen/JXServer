@@ -141,14 +141,14 @@ uint8_t *compress(struct dict *dict, const uint8_t *payloads, uint64_t payload_l
     return compressed;
 }
 
-uint8_t *decompress(struct dict *dict, uint8_t *compressed, const uint64_t compressed_length) {
+uint8_t *decompress(struct dict *dict, uint8_t *compressed, const uint64_t compressed_length, uint64_t *num_decompressed) {
     uint8_t *decompressed_code = malloc(sizeof(uint8_t) * 256);
-    memset(decompressed_code, 0, 256);
-    uint8_t num_decompressed = 0;
+    *num_decompressed = 0;
     uint64_t cursor_index = 0;
     uint8_t padding_length = compressed[compressed_length - 1];
     uint64_t bit_length = (compressed_length - 1) * 8 - padding_length;
     uint8_t *code = malloc(sizeof(uint8_t) * 32);
+    memset(code, 0, 32);
     uint16_t code_length = 0;
     while (cursor_index < bit_length) {
         if (get_bit(compressed, cursor_index)) {
@@ -173,16 +173,15 @@ uint8_t *decompress(struct dict *dict, uint8_t *compressed, const uint64_t compr
                 }
             }
             if (found) {
-                decompressed_code[num_decompressed++] = i;
+                decompressed_code[(*num_decompressed)++] = i;
                 memset(code, 0, code_length);
                 code_length = 0;
                 break;
             }
         }
     }
-    uint8_t *result = malloc(sizeof(uint8_t) * num_decompressed);
-    printf("%d\n", num_decompressed);
-    memcpy(result, decompressed_code, num_decompressed);
+    uint8_t *result = malloc(sizeof(uint8_t) * *num_decompressed);
+    memcpy(result, decompressed_code, *num_decompressed);
     free(decompressed_code);
     free(code);
     return result;

@@ -29,6 +29,6 @@ int get_code_length(struct dict *dict, const uint8_t *payload, uint64_t payload_
 
 uint8_t *compress(struct dict *dict, const uint8_t *payloads, uint64_t payload_length);
 
-uint8_t *decompress(struct dict *dict, uint8_t *compressed, const uint64_t compressed_length);
+uint8_t *decompress(struct dict *dict, uint8_t *compressed, const uint64_t compressed_length, uint64_t *num_decompressed);
 
 #endif

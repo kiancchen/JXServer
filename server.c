@@ -12,7 +12,7 @@
 #include "dict.h"
 #include "helper_func.h"
 #include "directory.h"
-//#include <libkern/OSByteOrder.h>
+#include <libkern/OSByteOrder.h>
 
 #define DEBUG (0)
 #define CON_CLS (0)
@@ -21,8 +21,8 @@
 #define LEN_ZERO (3)
 #define make_header(type, com, req) (type << 4 | com << 3 | req << 2)
 #define HEADER_LENGTH (9)
-//#define htobe64(x) OSSwapHostToBigInt64(x)
-//#define htobe32(x) OSSwapHostToBigInt32(x)
+#define htobe64(x) OSSwapHostToBigInt64(x)
+#define htobe32(x) OSSwapHostToBigInt32(x)
 
 struct header {
     unsigned type: 4;
@@ -361,22 +361,13 @@ void *connection_handler(void *arg) {
 
         } else if (type == (unsigned) 0x6) {
             uint8_t *request_payload;
+            uint64_t length;
             if (request->header->compressed == 0){
                 request_payload = request->payload;
+                length = request->length;
             }else{
-                request_payload = decompress(&dict, request->payload, request->length);
+                request_payload = decompress(&dict, request->payload, request->length, &length);
             }
-
-//            printf("Payload length: %lu\n", request->length);
-            for (int i = 0; i < 75; ++i) {
-                printf("%x ", request->payload[i]);
-            }
-            puts("");
-
-            for (int i = 0; i < 27; ++i) {
-                printf("%x ", request_payload[i]);
-            }
-            puts("");
 
 
             uint32_t id[1];
@@ -394,7 +385,7 @@ void *connection_handler(void *arg) {
 //            printf("len data: %lu\n", *len_data);
 
             // Concatenate the filename
-            uint64_t len_filename = request->length - 20;
+            uint64_t len_filename = length - 20;
             char *filename = malloc(sizeof(char) * (strlen(dir_path) + len_filename + 2));
             filename[strlen(dir_path) + len_filename + 1] = '\0';
             memcpy(filename, dir_path, strlen(dir_path));
@@ -417,7 +408,7 @@ void *connection_handler(void *arg) {
             fread(buffer, sizeof(char), sz, f);
             fclose(f);
             //make the payload
-            uint64_t length;
+
             uint8_t *payload = malloc(sizeof(uint8_t) * *len_data);
             memcpy(payload, buffer + *starting, *len_data);
             // make the response
