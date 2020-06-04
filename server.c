@@ -305,9 +305,11 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
-            char *filename = malloc(sizeof(char) * (strlen(dir_path) + request->length));
+            char *filename = malloc(sizeof(char) * (strlen(dir_path) + request->length + 2));
+            filename[strlen(dir_path) + request->length + 1] = '\0';
             memcpy(filename, dir_path, strlen(dir_path));
-            memcpy(filename + strlen(dir_path), request->payload, request->length);
+            filename[strlen(dir_path)] = '/';
+            memcpy(filename + strlen(dir_path) + 1, request->payload, request->length);
             printf("%s\n", filename);
 //            FILE *f = fopen(filename, "r");
 //            size_t sz = file_size(f);
