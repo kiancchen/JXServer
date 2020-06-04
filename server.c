@@ -288,6 +288,8 @@ void file_size_handler(const struct data *data, const message *request, size_t s
         free(compressed);
     }
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+    free(payload);
+    free(response);
 }
 
 /**
@@ -381,12 +383,15 @@ void *connection_handler(void *arg) {
             memcpy(filename + strlen(dir_path) + 1, request->payload + 20, len_filename);
 //            printf("Filename: %s\n", filename);
             FILE *f = fopen(filename, "r");
+            free(filename);
             if (!f) {
+                puts("1");
                 send_error(data->connect_fd);
                 break;
             }
             size_t sz = file_size(f);
             if (*len_data >= sz) {
+                puts("2");
                 send_error(data->connect_fd);
                 break;
             }
@@ -402,6 +407,9 @@ void *connection_handler(void *arg) {
             memcpy(response + 9, payload, length);
             length += HEADER_LENGTH;
             send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+            free(buffer);
+            free(payload);
+            free(response);
 
         } else if (type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
