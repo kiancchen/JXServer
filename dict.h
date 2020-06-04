@@ -1,3 +1,6 @@
+#ifndef DICT_H_
+#define DICT_H_
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,3 +28,5 @@ void read_dict(struct dict *dict);
 int get_code_length(struct dict *dict, const uint8_t *payload, uint64_t payload_length);
 
 uint8_t *compress(struct dict *dict, const uint8_t *payloads, uint64_t payload_length);
+
+#endif
