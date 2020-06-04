@@ -360,17 +360,17 @@ void *connection_handler(void *arg) {
             uint32_t id[1];
             memcpy(id, request->payload, 4);
             *id = htobe32(*id);
-            printf("ID: %u\n", *id);
+//            printf("ID: %u\n", *id);
 
             uint64_t starting[1];
             memcpy(starting, request->payload + 4, 8);
             *starting = htobe64(*starting);
-            printf("Starting: %lu\n", *starting);
+//            printf("Starting: %lu\n", *starting);
 
             uint64_t len_data[1];
             memcpy(len_data, request->payload + 12, 8);
             *len_data = htobe64(*len_data);
-            printf("length_data: %lu\n", *len_data);
+//            printf("length_data: %lu\n", *len_data);
 
             uint64_t len_filename = request->length - 20;
 
@@ -385,8 +385,6 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
-            break;
-
         } else if (type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
