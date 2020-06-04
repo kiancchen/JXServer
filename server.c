@@ -12,6 +12,7 @@
 #include "dict.h"
 #include "helper_func.h"
 #include "directory.h"
+//#include <libkern/OSByteOrder.h>
 
 #define DEBUG (0)
 #define CON_CLS (0)
@@ -20,6 +21,8 @@
 #define LEN_ZERO (3)
 #define make_header(type, com, req) (type << 4 | com << 3 | req << 2)
 #define HEADER_LENGTH (9)
+//#define htobe64(x) OSSwapHostToBigInt64(x)
+//#define htobe32(x) OSSwapHostToBigInt32(x)
 
 struct header {
     unsigned type: 4;
@@ -361,10 +364,10 @@ void *connection_handler(void *arg) {
             if (request->header->compressed == 0){
                 request_payload = request->payload;
             }else{
-                request_payload = decompress(&dict, request->payload, be64toh(request->length));
+                request_payload = decompress(&dict, request->payload, request->length);
             }
 
-            printf("Payload length: %lu\n", request->length);
+//            printf("Payload length: %lu\n", request->length);
             for (int i = 0; i < 75; ++i) {
                 printf("%x ", request->payload[i]);
             }
@@ -383,12 +386,12 @@ void *connection_handler(void *arg) {
             uint64_t starting[1];
             memcpy(starting, request_payload + 4, 8);
             *starting = htobe64(*starting);
-            printf("Starting: %lu\n", *starting);
+//            printf("Starting: %lu\n", *starting);
 
             uint64_t len_data[1];
             memcpy(len_data, request_payload + 12, 8);
             *len_data = htobe64(*len_data);
-            printf("len data: %lu\n", *len_data);
+//            printf("len data: %lu\n", *len_data);
 
             // Concatenate the filename
             uint64_t len_filename = request->length - 20;
