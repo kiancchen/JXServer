@@ -385,6 +385,13 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
+            size_t sz = file_size(f);
+            if (*len_data >= sz){
+                send_error(data->connect_fd);
+                break;
+            }
+
+
         } else if (type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
