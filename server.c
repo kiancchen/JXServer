@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <ctype.h>
 #include <signal.h>
@@ -12,6 +13,8 @@
 #include "helper_func.h"
 #include "directory.h"
 
+
+
 #define DEBUG (0)
 #define CON_CLS (0)
 #define INVALID_MSG (1)
@@ -20,7 +23,6 @@
 #define make_header(type, com, req) (type << 4 | com << 3 | req << 2)
 #define HEADER_LENGTH (9)
 #define PAYLOAD_INDEX (81)
-
 
 struct header {
     unsigned type: 4;
@@ -314,7 +316,7 @@ void *connection_handler(void *arg) {
             size_t sz = file_size(f);
             fclose(f);
             // convert to network byte order
-            uint64_t size_64 = htons(sz);
+            uint64_t size_64 = htobe64(sz);
 
             uint8_t *response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + 8));
             response[0] = make_header(0x5, 0, 0);
