@@ -266,13 +266,13 @@ void file_size_handler(const struct data *data, const message *request, size_t s
     uint64_to_uint8(size_64, payload);
 
     uint8_t *response;
-    if (request->header->req_compress == 0){
+    if (request->header->req_compress == 0) {
         response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
         response[0] = make_header(0x5, 0, 0);
         uint64_to_uint8(htobe64(length), response + 1);
         memcpy(response + 9, payload, length);
         length += HEADER_LENGTH;
-    }else{
+    } else {
         uint64_t compressed_length = get_code_length(&dict, payload, 8);
         compressed_length = upper_divide(compressed_length, 8) + 1;
         // make the response
@@ -346,7 +346,7 @@ void *connection_handler(void *arg) {
             filename[strlen(dir_path)] = '/';
             memcpy(filename + strlen(dir_path) + 1, request->payload, request->length);
             FILE *f = fopen(filename, "r");
-            if (!f){
+            if (!f) {
                 send_error(data->connect_fd);
                 break;
             }
@@ -355,6 +355,20 @@ void *connection_handler(void *arg) {
             free(filename);
 
             file_size_handler(data, request, sz);
+
+        } else if (type == (unsigned) 0x6) {
+            char *filename = malloc(sizeof(char) * (strlen(dir_path) + request->length + 2));
+            filename[strlen(dir_path) + request->length + 1] = '\0';
+            memcpy(filename, dir_path, strlen(dir_path));
+            filename[strlen(dir_path)] = '/';
+            memcpy(filename + strlen(dir_path) + 1, request->payload, request->length);
+            printf("%s\n", filename);
+            FILE *f = fopen(filename, "r");
+            if (!f) {
+                send_error(data->connect_fd);
+                break;
+            }
+            break;
 
         } else if (type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
