@@ -403,15 +403,19 @@ void *connection_handler(void *arg) {
             // make the response
             uint8_t *response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
             response[0] = make_header(0x7, 0, 0);
-
+            // make the payload length
             uint64_to_uint8(response + 1, htobe64(length));
-            // fill the file info
-            memcpy(response + 9, request->payload, 4);
-            memcpy(response + 13, request->payload + 4, 8);
-            memcpy(response + 21, request->payload + 12, 8);
-            // fill the file data
-            memcpy(response + 29, payload, *len_data);
-            length += HEADER_LENGTH;
+
+            if (request->header->req_compress == 0){
+                // fill the file info
+                memcpy(response + 9, request->payload, 20);
+                // fill the file data
+                memcpy(response + 29, payload, *len_data);
+                length += HEADER_LENGTH;
+            }else{
+                puts("");
+            }
+
             send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
             free(buffer);
             free(payload);
