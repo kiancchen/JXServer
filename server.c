@@ -311,12 +311,12 @@ void *connection_handler(void *arg) {
             filename[strlen(dir_path)] = '/';
             memcpy(filename + strlen(dir_path) + 1, request->payload, request->length);
             printf("%s\n", filename);
-//            FILE *f = fopen(filename, "r");
-//            size_t sz = file_size(f);
-//            printf("%zu\n", sz);
-//            fclose(f);
-//            uint64_t size_64 = htons(sz);
-//            printf("%lu\n", size_64);
+            FILE *f = fopen(filename, "r");
+            size_t sz = file_size(f);
+            printf("%zu\n", sz);
+            fclose(f);
+            uint64_t size_64 = htons(sz);
+            printf("%lu\n", size_64);
 //
 //            uint8_t *response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + 8));
 //            response[0] = make_header(0x5, 0, 0);
