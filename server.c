@@ -149,7 +149,6 @@ char *read_config(const char *filename, struct in_addr *inaddr, uint16_t *port) 
     return dir_path;
 }
 
-
 /**
  *
  * @param msg Source to be converted
@@ -168,7 +167,6 @@ void msg_to_response(const message *msg, uint8_t *response) {
     }
 }
 
-
 /**
  *
  * @param connect_fd connection file description
@@ -180,7 +178,6 @@ void send_error(int connect_fd) {
     send(connect_fd, &error_payload, sizeof(uint64_t), 0);
     close(connect_fd);
 }
-
 
 void echo_handler(const struct data *data, const message *request) {
     uint8_t *response;
@@ -218,10 +215,10 @@ void directory_list_handler(const struct data *data, const message *request) {
     char *file_list = get_file_list(dir_path, &length);
 
     uint8_t *payload;
-    if (length == 0){
+    if (length == 0) {
         payload = 0x00;
         length = 1;
-    }else{
+    } else {
         // convert char* file_list to uint8_t
         payload = malloc(sizeof(uint8_t) * length);
         memcpy(payload, file_list, length);
@@ -294,15 +291,23 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
-
             echo_handler(data, request);
+
         } else if (request->header->type == (unsigned) 0x2) {
             if (error != LEN_ZERO) {
                 send_error(data->connect_fd);
                 break;
             }
-
             directory_list_handler(data, request);
+
+        } else if (request->header->type == (unsigned) 0x4) {
+            if (error == LEN_ZERO) {
+                send_error(data->connect_fd);
+                break;
+            }
+            char *filename = malloc(sizeof(char) * request->length);
+            memcpy(filename, request->payload, request->length);
+            printf("%s\n", filename);
 
         } else if (request->header->type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
