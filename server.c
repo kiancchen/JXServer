@@ -14,7 +14,6 @@
 #include "directory.h"
 
 
-
 #define DEBUG (0)
 #define CON_CLS (0)
 #define INVALID_MSG (1)
@@ -160,8 +159,8 @@ void msg_to_response(const message *msg, uint8_t *response) {
     struct header *header = msg->header;
     // Convert the header to one byte of uint8_t
     response[0] = make_header(header->type, header->compressed, header->req_compress);
-
-    payload_len_to_uint8(msg->length, response);
+    uint64_to_uint8(htobe64(msg->length), response + 1);
+//    payload_len_to_uint8(msg->length, response);
 
     // Copy the payload
     for (int i = 0; i < msg->length; i++) {
@@ -190,7 +189,8 @@ void echo_handler(const struct data *data, const message *request) {
 
         response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
         response[0] = make_header(0x1, 1, 0);
-        payload_len_to_uint8(length, response);
+        uint64_to_uint8(htobe64(length), response + 1);
+//        payload_len_to_uint8(length, response);
         uint8_t *compressed = compress(&dict, request->payload, request->length);
 //        byte_copy((*response), compressed, 9, (*length));
         memcpy(response + 9, compressed, length);
