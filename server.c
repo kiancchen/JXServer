@@ -370,10 +370,13 @@ void *connection_handler(void *arg) {
             uint64_t starting[1];
             memcpy(starting, request_payload + 4, 8);
             *starting = htobe64(*starting);
+            printf("Starting: %lu\n", *starting);
 
             uint64_t len_data[1];
             memcpy(len_data, request_payload + 12, 8);
             *len_data = htobe64(*len_data);
+            printf("len data: %lu\n", *len_data);
+
             // Concatenate the filename
             uint64_t len_filename = request->length - 20;
             char *filename = malloc(sizeof(char) * (strlen(dir_path) + len_filename + 2));
@@ -390,8 +393,6 @@ void *connection_handler(void *arg) {
             }
             size_t sz = file_size(f);
             if ((*starting + *len_data) > sz) {
-                printf("Starting: %lu\n", *starting);
-                printf("len data: %lu\n", *len_data);
 
                 send_error(data->connect_fd);
                 break;
