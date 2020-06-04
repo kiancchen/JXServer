@@ -357,28 +357,30 @@ void *connection_handler(void *arg) {
             file_size_handler(data, request, sz);
 
         } else if (type == (unsigned) 0x6) {
+            uint8_t *request_payload;
+            if (request->header->compressed == 0){
+                request_payload = request->payload;
+            }else{
+                request_payload = decompress(&dict, request->payload, request->length);
+            }
             uint32_t id[1];
-            memcpy(id, request->payload, 4);
+            memcpy(id, request_payload, 4);
             *id = htobe32(*id);
-//            printf("ID: %u\n", *id);
 
             uint64_t starting[1];
-            memcpy(starting, request->payload + 4, 8);
+            memcpy(starting, request_payload + 4, 8);
             *starting = htobe64(*starting);
-//            printf("Starting: %lu\n", *starting);
 
             uint64_t len_data[1];
-            memcpy(len_data, request->payload + 12, 8);
+            memcpy(len_data, request_payload + 12, 8);
             *len_data = htobe64(*len_data);
-//            printf("length_data: %lu\n", *len_data);
-
+            // Concatenate the filename
             uint64_t len_filename = request->length - 20;
-
             char *filename = malloc(sizeof(char) * (strlen(dir_path) + len_filename + 2));
             filename[strlen(dir_path) + len_filename + 1] = '\0';
             memcpy(filename, dir_path, strlen(dir_path));
             filename[strlen(dir_path)] = '/';
-            memcpy(filename + strlen(dir_path) + 1, request->payload + 20, len_filename);
+            memcpy(filename + strlen(dir_path) + 1, request_payload + 20, len_filename);
 //            printf("Filename: %s\n", filename);
             FILE *f = fopen(filename, "r");
             free(filename);
@@ -409,7 +411,7 @@ void *connection_handler(void *arg) {
                 // make the payload length
                 uint64_to_uint8(response + 1, htobe64(length));
                 // fill the file info
-                memcpy(response + 9, request->payload, 20);
+                memcpy(response + 9, request_payload, 20);
                 // fill the file data
                 memcpy(response + 29, payload, *len_data);
                 length += HEADER_LENGTH;
@@ -417,7 +419,7 @@ void *connection_handler(void *arg) {
                 length = 20 + *len_data;
                 // Concatenate the payloads
                 uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
-                memcpy(uncompressed_payload, request->payload, 20);
+                memcpy(uncompressed_payload, request_payload, 20);
                 memcpy(uncompressed_payload, payload, *len_data);
                 // Get the length of compressed payload
                 uint64_t compressed_length = get_code_length(&dict, uncompressed_payload, length);
@@ -426,7 +428,7 @@ void *connection_handler(void *arg) {
                 response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
                 response[0] = make_header(0x7, 1, 0);
                 // fill the payload length bytes
-                uint64_to_uint8(response + 1, compressed_length);
+                uint64_to_uint8(response + 1, htobe64(compressed_length));
                 // get the compressed payload and copy to the response
                 uint8_t *compressed = compress(&dict, uncompressed_payload, length);
                 memcpy(response + 9, compressed, compressed_length);
