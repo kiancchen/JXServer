@@ -389,7 +389,7 @@ void *connection_handler(void *arg) {
                 break;
             }
             size_t sz = file_size(f);
-            if (*starting >= sz) {
+            if ((*starting + *len_data) >= sz) {
                 send_error(data->connect_fd);
                 break;
             }
