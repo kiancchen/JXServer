@@ -143,6 +143,7 @@ uint8_t *compress(struct dict *dict, const uint8_t *payloads, uint64_t payload_l
 
 uint8_t *decompress(struct dict *dict, uint8_t *compressed, const uint64_t compressed_length) {
     uint8_t *decompressed_code = malloc(sizeof(uint8_t) * 256);
+    memset(decompressed_code, 0, 256);
     uint8_t num_decompressed = 0;
     uint64_t cursor_index = 0;
     uint8_t padding_length = compressed[compressed_length - 1];
@@ -192,9 +193,15 @@ uint8_t *decompress(struct dict *dict, uint8_t *compressed, const uint64_t compr
 //            0x98, 0xb4, 0x8e, 0xd9, 0x8b, 0x48, 0xed, 0x98, 0xb4, 0x91, 0xd9, 0x8b, 0x48, 0xed, 0x98, 0xb4, 0x8e,
 //            0xd9, 0x8b, 0x48, 0xed, 0x98, 0xb4, 0x8e, 0xd9, 0x8b, 0x48, 0xed, 0x98, 0xb4, 0x8e, 0xd9, 0x8b, 0x48,
 //            0xeb, 0x8b, 0x97, 0x26, 0xfb, 0x31, 0x69, 0x1c, 0x1};
-//    uint8_t *decode = decompress(dict, compressed, 75);
-//    printf("%x\n", *decode);
-//    printf("%x\n", *(decode + 1));
+//    uint8_t little_c[75];
+//    for (int i = 0; i < 75; ++i) {
+//        little_c[i] = compressed[74 - i];
+//    }
+//
+//    uint8_t *decode = decompress(dict, little_c, 75);
+//    for (int i = 0; i < 40; ++i) {
+//        printf("%x ", decode[i]);
+//    }
 //
 ////    for (int j =0; j < 8; ++j) {
 ////        if (get_bit(&compressed, j)) {
