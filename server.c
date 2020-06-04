@@ -373,7 +373,7 @@ void *connection_handler(void *arg) {
             }
             puts("");
 
-            for (int i = 0; i < 20; ++i) {
+            for (int i = 0; i < 27; ++i) {
                 printf("%x ", request_payload[i]);
             }
             puts("");
