@@ -426,7 +426,7 @@ void *connection_handler(void *arg) {
                 response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
                 response[0] = make_header(0x7, 1, 0);
                 // fill the payload length bytes
-                uint64_to_uint8(response + 1, htobe64(compressed_length));
+                uint64_to_uint8(response + 1, compressed_length);
                 // get the compressed payload and copy to the response
                 uint8_t *compressed = compress(&dict, uncompressed_payload, length);
                 memcpy(response + 9, compressed, compressed_length);
