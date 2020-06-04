@@ -183,22 +183,26 @@ uint8_t *decompress(struct dict *dict, uint8_t *compressed, const uint64_t compr
 }
 
 
-//int main(void) {
-//    struct dict *dict = malloc(sizeof(struct dict));
-//    read_dict(dict);
-////    // test length
-//    uint8_t payloads[2] = {0x00, 0xa};
-//    uint8_t compressed[3] = {0x34, 0x00};
-//    uint8_t *decode = decompress(dict, compressed, 2);
-//    printf("%x\n", *decode);
-//    printf("%x\n", *(decode + 1));
-//
-////    for (int j =0; j < 8; ++j) {
-////        if (get_bit(&compressed, j)) {
-////            printf("1");
-////        } else {
-////            printf("0");
-////        }
-////    }
-////    puts("");
-//}
+int main(void) {
+    struct dict *dict = malloc(sizeof(struct dict));
+    read_dict(dict);
+//    // test length
+    uint8_t payloads[75] = {0xd9, 0x8b, 0x49, 0x2d, 0x98, 0xb4, 0x91, 0xd9, 0x8b, 0x49, 0xd, 0x98, 0xb4, 0x8f, 0xd9,
+            0x8b, 0x48, 0xed, 0x98, 0xb4, 0x8e, 0xd9, 0x8b, 0x48, 0xed, 0x98, 0xb4, 0x8e, 0xd9, 0x8b, 0x48, 0xed,
+            0x98, 0xb4, 0x8e, 0xd9, 0x8b, 0x48, 0xed, 0x98, 0xb4, 0x91, 0xd9, 0x8b, 0x48, 0xed, 0x98, 0xb4, 0x8e,
+            0xd9, 0x8b, 0x48, 0xed, 0x98, 0xb4, 0x8e, 0xd9, 0x8b, 0x48, 0xed, 0x98, 0xb4, 0x8e, 0xd9, 0x8b, 0x48,
+            0xeb, 0x8b, 0x97, 0x26, 0xfb, 0x31, 0x69, 0x1c, 0x1};
+    uint8_t compressed[3] = {0x34, 0x00};
+    uint8_t *decode = decompress(dict, compressed, 2);
+    printf("%x\n", *decode);
+    printf("%x\n", *(decode + 1));
+
+//    for (int j =0; j < 8; ++j) {
+//        if (get_bit(&compressed, j)) {
+//            printf("1");
+//        } else {
+//            printf("0");
+//        }
+//    }
+//    puts("");
+}

@@ -363,6 +363,8 @@ void *connection_handler(void *arg) {
             }else{
                 request_payload = decompress(&dict, request->payload, request->length);
             }
+            printf("Payload length: %lu\n", request->length);
+
             for (int i = 0; i < 20; ++i) {
                 printf("%x ", request_payload[i]);
             }
