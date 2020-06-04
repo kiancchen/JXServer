@@ -385,13 +385,13 @@ void *connection_handler(void *arg) {
             FILE *f = fopen(filename, "r");
             free(filename);
             if (!f) {
-                puts("1");
+                puts("File does not exits!");
                 send_error(data->connect_fd);
                 break;
             }
             size_t sz = file_size(f);
-            if (*len_data >= sz) {
-                puts("2");
+            if (*starting >= sz) {
+                puts("Band range");
                 send_error(data->connect_fd);
                 break;
             }
