@@ -15,12 +15,12 @@ void payload_len_to_uint8(const uint64_t src, uint8_t *dest) {
     }
 }
 
-void uint64_to_uint8(const uint64_t src, uint8_t *dest, int start) {
+void uint64_to_uint8(const uint64_t src, uint8_t *dest) {
     // Convert the length of uint64_t to uint8_t[8] and copy to the response
     uint8_t length[8];
     memcpy(length, &src, sizeof(uint64_t));
-    for (int i = 0; i < 8; i++) {
-        dest[start + 0] = length[7-i];
+    for (int i = 1; i < 9; i++) {
+        dest[i] = length[i-1];
     }
 }
 
