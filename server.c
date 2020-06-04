@@ -320,14 +320,15 @@ void *connection_handler(void *arg) {
             uint64_t length = 8;
             uint64_t size_64 = htobe64(sz);
             uint8_t *payload = malloc(sizeof(uint8_t) * length);
-            memcpy(payload, size_64, length);
+            uint64_to_uint8(size_64, payload);
+
 
             uint8_t *response;
             if (request->header->req_compress == 0){
-                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + 8));
+                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
                 response[0] = make_header(0x5, 0, 0);
-                uint64_to_uint8(htobe64(8), response + 1);
-                uint64_to_uint8(size_64, response + 9);
+                uint64_to_uint8(htobe64(length), response + 1);
+                memcpy(response + 9, payload, length);
                 length += HEADER_LENGTH;
             }else{
                 uint64_t compressed_length = get_code_length(&dict, payload, 8);
