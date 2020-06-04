@@ -393,16 +393,23 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
-            uint64_t length = sz - *starting;
             char *buffer = malloc(sizeof(char) * sz);
             fread(buffer, sizeof(char), sz, f);
             fclose(f);
+            //make the payload
+            uint64_t length = sz - *starting + 20;
             uint8_t *payload = malloc(sizeof(uint8_t) * length);
             memcpy(payload, buffer + *starting, length);
+            // make the response
             uint8_t *response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
             response[0] = make_header(0x7, 0, 0);
             uint64_to_uint8(htobe64(length), response + 1);
-            memcpy(response + 9, payload, length);
+            // fill the file info
+            memcpy(response + 9, id, 4);
+            memcpy(response + 13, starting, 8);
+            memcpy(response + 21, len_data, 8);
+            // fill the file data
+            memcpy(response + 29, payload, length - 20);
             length += HEADER_LENGTH;
             send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
             free(buffer);
