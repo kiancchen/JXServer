@@ -405,9 +405,9 @@ void *connection_handler(void *arg) {
             response[0] = make_header(0x7, 0, 0);
             uint64_to_uint8(htobe64(length), response + 1);
             // fill the file info
-            memcpy(response + 9, htobe32(id), 4);
-            memcpy(response + 13, htobe64(starting), 8);
-            memcpy(response + 21, htobe64(len_data), 8);
+            memcpy(response + 9, htobe32(*id), 4);
+            memcpy(response + 13, htobe64(*starting), 8);
+            memcpy(response + 21, htobe64(*len_data), 8);
             // fill the file data
             memcpy(response + 29, payload, *len_data);
             length += HEADER_LENGTH;
