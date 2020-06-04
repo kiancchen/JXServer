@@ -244,7 +244,6 @@ void directory_list_handler(const struct data *data, const message *request) {
         response[0] = make_header(0x3, 1, 0);
         // fill the payload length bytes
         uint64_to_uint8(htobe64(compressed_length), response + 1);
-//        payload_len_to_uint8(compressed_length, response);
         // get the compressed payload and copy to the response
         uint8_t *compressed = compress(&dict, payload, length);
         memcpy(response + 9, compressed, compressed_length);
@@ -287,7 +286,8 @@ void *connection_handler(void *arg) {
             break;
         }
 
-        if (request->header->type == (unsigned) 0x0) {
+        unsigned int type = request->header->type;
+        if (type == (unsigned) 0x0) {
             // Echo Functionality
             if (error == LEN_ZERO) {
                 send_error(data->connect_fd);
@@ -295,18 +295,19 @@ void *connection_handler(void *arg) {
             }
             echo_handler(data, request);
 
-        } else if (request->header->type == (unsigned) 0x2) {
+        } else if (type == (unsigned) 0x2) {
             if (error != LEN_ZERO) {
                 send_error(data->connect_fd);
                 break;
             }
             directory_list_handler(data, request);
 
-        } else if (request->header->type == (unsigned) 0x4) {
+        } else if (type == (unsigned) 0x4) {
             if (error == LEN_ZERO) {
                 send_error(data->connect_fd);
                 break;
             }
+
             char *filename = malloc(sizeof(char) * (strlen(dir_path) + request->length + 2));
             filename[strlen(dir_path) + request->length + 1] = '\0';
             memcpy(filename, dir_path, strlen(dir_path));
@@ -316,16 +317,36 @@ void *connection_handler(void *arg) {
             size_t sz = file_size(f);
             fclose(f);
             // convert to network byte order
+            uint64_t length = 8;
             uint64_t size_64 = htobe64(sz);
+            uint8_t *payload = malloc(sizeof(uint8_t) * length);
+            memcpy(payload, size_64, length);
 
-            uint8_t *response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + 8));
-            response[0] = make_header(0x5, 0, 0);
-            uint64_to_uint8(htobe64(8), response+1);
-            uint64_to_uint8(size_64, response + 9);
-//            payload_len_to_uint8(size_64, response + 8);
-            send(data->connect_fd, response, sizeof(uint8_t) * ((HEADER_LENGTH + 8)), 0);
+            uint8_t *response;
+            if (request->header->req_compress == 0){
+                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + 8));
+                response[0] = make_header(0x5, 0, 0);
+                uint64_to_uint8(htobe64(8), response + 1);
+                uint64_to_uint8(size_64, response + 9);
+                length += HEADER_LENGTH;
+            }else{
+                uint64_t compressed_length = get_code_length(&dict, payload, 8);
+                compressed_length = upper_divide(compressed_length, 8) + 1;
+                // make the response
+                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
+                response[0] = make_header(0x5, 1, 0);
+                // fill the payload length bytes
+                uint64_to_uint8(htobe64(compressed_length), response + 1);
+                // get the compressed payload and copy to the response
+                uint8_t *compressed = compress(&dict, payload, length);
+                memcpy(response + 9, compressed, compressed_length);
+                // the final length of the whole response
+                length = compressed_length + HEADER_LENGTH;
+                free(compressed);
+            }
+            send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
             free(filename);
-        } else if (request->header->type == (unsigned) 0x8) {
+        } else if (type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
             break;
