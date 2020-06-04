@@ -20,7 +20,7 @@ void uint64_to_uint8(const uint64_t src, uint8_t *dest, int start) {
     uint8_t length[8];
     memcpy(length, &src, sizeof(uint64_t));
     for (int i = 0; i < 8; i++) {
-        dest[start + 0] = length[i];
+        dest[start + 0] = length[8-i];
     }
 }
 
