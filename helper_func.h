@@ -6,4 +6,4 @@
 
 //void payload_len_to_uint8(const uint64_t src, uint8_t *dest);
 
-void uint64_to_uint8(const uint64_t src, uint8_t *dest);
+void uint64_to_uint8(uint8_t *dest, const uint64_t src);

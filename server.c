@@ -157,7 +157,7 @@ void msg_to_response(const message *msg, uint8_t *response) {
     struct header *header = msg->header;
     // Convert the header to one byte of uint8_t
     response[0] = make_header(header->type, header->compressed, header->req_compress);
-    uint64_to_uint8(htobe64(msg->length), response + 1);
+    uint64_to_uint8(response + 1, htobe64(msg->length));
 //    payload_len_to_uint8(msg->length, response);
 
     // Copy the payload
@@ -194,7 +194,7 @@ void echo_handler(const struct data *data, const message *request) {
 
         response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
         response[0] = make_header(0x1, 1, 0);
-        uint64_to_uint8(htobe64(length), response + 1);
+        uint64_to_uint8(response + 1, htobe64(length));
 //        payload_len_to_uint8(length, response);
         uint8_t *compressed = compress(&dict, request->payload, request->length);
 //        byte_copy((*response), compressed, 9, (*length));
@@ -229,7 +229,7 @@ void directory_list_handler(const struct data *data, const message *request) {
         response = malloc(sizeof(uint8_t) * (length + HEADER_LENGTH));
         response[0] = make_header(0x3, 0, 0);
         // fill the payload length bytes
-        uint64_to_uint8(htobe64(length), response + 1);
+        uint64_to_uint8(response + 1, htobe64(length));
 //        payload_len_to_uint8(length, response);
         // fill the payload as file list
         memcpy(response + 9, payload, length);
@@ -243,7 +243,7 @@ void directory_list_handler(const struct data *data, const message *request) {
         response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
         response[0] = make_header(0x3, 1, 0);
         // fill the payload length bytes
-        uint64_to_uint8(htobe64(compressed_length), response + 1);
+        uint64_to_uint8(response + 1, htobe64(compressed_length));
         // get the compressed payload and copy to the response
         uint8_t *compressed = compress(&dict, payload, length);
         memcpy(response + 9, compressed, compressed_length);
@@ -263,13 +263,13 @@ void file_size_handler(const struct data *data, const message *request, size_t s
     uint64_t length = 8;
     uint64_t size_64 = htobe64(sz);
     uint8_t *payload = malloc(sizeof(uint8_t) * length);
-    uint64_to_uint8(size_64, payload);
+    uint64_to_uint8(payload, size_64);
 
     uint8_t *response;
     if (request->header->req_compress == 0) {
         response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
         response[0] = make_header(0x5, 0, 0);
-        uint64_to_uint8(htobe64(length), response + 1);
+        uint64_to_uint8(response + 1, htobe64(length));
         memcpy(response + 9, payload, length);
         length += HEADER_LENGTH;
     } else {
@@ -279,7 +279,7 @@ void file_size_handler(const struct data *data, const message *request, size_t s
         response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
         response[0] = make_header(0x5, 1, 0);
         // fill the payload length bytes
-        uint64_to_uint8(htobe64(compressed_length), response + 1);
+        uint64_to_uint8(response + 1, htobe64(compressed_length));
         // get the compressed payload and copy to the response
         uint8_t *compressed = compress(&dict, payload, length);
         memcpy(response + 9, compressed, compressed_length);
@@ -404,7 +404,7 @@ void *connection_handler(void *arg) {
             uint8_t *response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
             response[0] = make_header(0x7, 0, 0);
 
-            uint64_to_uint8(htobe64(length), response + 1);
+            uint64_to_uint8(response + 1, htobe64(length));
             // fill the file info
             memcpy(response + 9, request->payload, 4);
             memcpy(response + 13, request->payload + 4, 8);
