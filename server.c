@@ -363,6 +363,12 @@ void *connection_handler(void *arg) {
             }else{
                 request_payload = decompress(&dict, request->payload, request->length);
             }
+            for (int i = 0; i < 20; ++i) {
+                printf("%x ", request_payload[i]);
+            }
+            puts("");
+
+
             uint32_t id[1];
             memcpy(id, request_payload, 4);
             *id = htobe32(*id);
