@@ -357,12 +357,25 @@ void *connection_handler(void *arg) {
             file_size_handler(data, request, sz);
 
         } else if (type == (unsigned) 0x6) {
-            char *filename = malloc(sizeof(char) * (strlen(dir_path) + request->length + 2));
-            filename[strlen(dir_path) + request->length + 1] = '\0';
+            uint32_t id[1];
+            memcpy(id, request->payload, 4);
+            printf("ID: %u\n", *id);
+            uint64_t starting[1];
+            memcpy(starting, request->payload + 4, 8);
+            printf("ID: %llu\n", *starting);
+
+            uint64_t len_data[1];
+            memcpy(len_data, request->payload + 12, 8);
+            printf("length_data: %llu\n", *len_data);
+
+            uint64_t len_filename = request->length - 20;
+
+            char *filename = malloc(sizeof(char) * (strlen(dir_path) + len_filename + 2));
+            filename[strlen(dir_path) + len_filename + 1] = '\0';
             memcpy(filename, dir_path, strlen(dir_path));
             filename[strlen(dir_path)] = '/';
-            memcpy(filename + strlen(dir_path) + 1, request->payload, request->length);
-            printf("%s\n", filename);
+            memcpy(filename + strlen(dir_path) + 1, request->payload + 20, len_filename);
+            printf("Filename: %s\n", filename);
             FILE *f = fopen(filename, "r");
             if (!f) {
                 send_error(data->connect_fd);
