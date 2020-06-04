@@ -195,9 +195,7 @@ void echo_handler(const struct data *data, const message *request) {
         response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
         response[0] = make_header(0x1, 1, 0);
         uint64_to_uint8(response + 1, htobe64(length));
-//        payload_len_to_uint8(length, response);
         uint8_t *compressed = compress(&dict, request->payload, request->length);
-//        byte_copy((*response), compressed, 9, (*length));
         memcpy(response + 9, compressed, length);
 
         length += HEADER_LENGTH;
@@ -397,23 +395,42 @@ void *connection_handler(void *arg) {
             fread(buffer, sizeof(char), sz, f);
             fclose(f);
             //make the payload
-            uint64_t length = sz - *starting + 20;
+            uint64_t length;
             uint8_t *payload = malloc(sizeof(uint8_t) * *len_data);
             memcpy(payload, buffer + *starting, *len_data);
             // make the response
-            uint8_t *response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
-            response[0] = make_header(0x7, 0, 0);
-            // make the payload length
-            uint64_to_uint8(response + 1, htobe64(length));
+            uint8_t *response;
 
-            if (request->header->req_compress == 0){
+            if (request->header->req_compress == 0) {
+                length = sz - *starting + 20;
+                // make the response
+                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
+                response[0] = make_header(0x7, 0, 0);
+                // make the payload length
+                uint64_to_uint8(response + 1, htobe64(length));
                 // fill the file info
                 memcpy(response + 9, request->payload, 20);
                 // fill the file data
                 memcpy(response + 29, payload, *len_data);
                 length += HEADER_LENGTH;
-            }else{
-                puts("");
+            } else {
+                uint64_t compressed_length = get_code_length(&dict, request->payload, 20);
+                compressed_length += get_code_length(&dict, payload, *len_data);
+                compressed_length = upper_divide(compressed_length, 8) + 1;
+                // make the response
+                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
+                response[0] = make_header(0x7, 1, 0);
+                // fill the payload length bytes
+                uint64_to_uint8(response + 1, htobe64(compressed_length));
+                // get the compressed payload and copy to the response
+                uint8_t *compressed_info = compress(&dict, request->payload, 20);
+                uint8_t *compressed_payload = compress(&dict, payload, *len_data);
+                memcpy(response + 9, compressed_info, 20);
+                memcpy(response + 29, compressed_payload, *len_data);
+                // the final length of the whole response
+                length = compressed_length + HEADER_LENGTH;
+                free(compressed_info);
+                free(compressed_payload);
             }
 
             send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
