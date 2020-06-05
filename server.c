@@ -215,7 +215,7 @@ void directory_list_handler(const struct data *data, const message *request) {
 }
 
 void compress_response(uint8_t **response, const uint8_t *payload, uint64_t *length) {
-    uint64_t compressed_length = get_code_length(&dict, payload, length);
+    uint64_t compressed_length = get_code_length(&dict, payload, *length);
     compressed_length = upper_divide(compressed_length, 8) + 1;
     // make the response
     *response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
