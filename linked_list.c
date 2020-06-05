@@ -1,7 +1,7 @@
 #include "linked_list.h"
 
 
-struct node *new_node(const char *filename, const uint32_t id, const uint64_t starting, uint64_t length) {
+struct node *new_node(char *filename, uint32_t id, uint64_t starting, uint64_t length) {
     struct node *node = malloc(sizeof(struct node));
     node->filename = filename;
     node->id = id;

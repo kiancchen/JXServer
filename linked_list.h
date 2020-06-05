@@ -24,7 +24,7 @@ struct linked_list {
     pthread_mutex_t mutex;
 };
 
-struct node *new_node(const char *filename, const uint32_t id, const uint64_t starting, uint64_t length);
+struct node *new_node(char *filename, uint32_t id, uint64_t starting, uint64_t length);
 
 uint8_t list_contains(struct linked_list *linked_list, struct node *node);
 
