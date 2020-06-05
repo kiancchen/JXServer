@@ -266,6 +266,21 @@ void decompress_payload(const message *request, uint8_t **request_payload, uint6
     }
 }
 
+
+void retrieve_get_info(uint8_t *payload, uint32_t *id, uint64_t *starting, uint64_t *len_data){
+    // get the session id
+    memcpy(id, payload, 4);
+    *id = htobe32(*id);
+
+    // get the starting offset
+    memcpy(starting, payload + 4, 8);
+    *starting = htobe64(*starting);
+
+    // get the length of data required
+    memcpy(len_data, payload + 12, 8);
+    *len_data = htobe64(*len_data);
+}
+
 /**
  *
  * @param arg data where stores the connect_fd and request message
@@ -332,18 +347,16 @@ void *connection_handler(void *arg) {
             decompress_payload(request, &request_payload, &length);
             // get the session id
             uint32_t id;
-            memcpy(&id, request_payload, 4);
-            id = htobe32(id);
+
 
             // get the starting offset
             uint64_t starting;
-            memcpy(&starting, request_payload + 4, 8);
-            starting = htobe64(starting);
+
 
             // get the length of data required
             uint64_t len_data;
-            memcpy(&len_data, request_payload + 12, 8);
-            len_data = htobe64(len_data);
+            retrieve_get_info(request_payload, &id, &starting, &length);
+
 
             // Concatenate the filename
             uint64_t len_filename = length - 20;
