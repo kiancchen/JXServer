@@ -373,7 +373,7 @@ void *connection_handler(void *arg) {
             uint32_t id[1];
             memcpy(id, request_payload, 4);
             *id = htobe32(*id);
-            printf("id: %lu\n", *id);
+            printf("id: %u\n", *id);
             uint64_t starting[1];
             memcpy(starting, request_payload + 4, 8);
             *starting = htobe64(*starting);
