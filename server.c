@@ -1,48 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <signal.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <pthread.h>
-#include "dict.h"
-#include "helper_func.h"
-#include "directory.h"
-#include "linked_list.h"
-//#include <libkern/OSByteOrder.h>
-
-#define DEBUG (0)
-#define CON_CLS (0)
-#define INVALID_MSG (1)
-#define SUCCESS (2)
-#define LEN_ZERO (3)
-#define make_header(type, com, req) (type << 4 | com << 3 | req << 2)
-#define HEADER_LENGTH (9)
-//#define htobe64(x) OSSwapHostToBigInt64(x)
-//#define htobe32(x) OSSwapHostToBigInt32(x)
-
-struct header {
-    unsigned type: 4;
-    unsigned compressed: 1;
-    unsigned req_compress: 1;
-    unsigned  : 2;
-};
-
-typedef struct {
-    struct header *header;
-    uint64_t length;
-    uint8_t *payload;
-} message;
-
-struct data {
-    int connect_fd;
-    message *msg;
-};
-
+#include "util.h"
 
 struct dict dict;
 char *dir_path;
@@ -62,19 +18,11 @@ int read_request(int connect_fd, message *request) {
     // Read the header and payload length
     uint8_t buffer[9];
     int num = recv(connect_fd, buffer, 9, 0);
-    if (DEBUG) {
-        for (int i = 0; i < 9; ++i) {
-            printf("%hhx ", buffer[i]);
-        }
-        puts("\n");
-    }
 
     if (num <= 0) {
-        if (DEBUG) puts("1");
         return CON_CLS; // Connection closed
     }
     if (num != 9) {
-        if (DEBUG) puts("2");
         return INVALID_MSG; // invalid input
     }
 
@@ -91,7 +39,6 @@ int read_request(int connect_fd, message *request) {
         length = ((unsigned) buffer[i] << ((8u - i) * 8u)) | length;
     }
     if (length == 0) {
-        if (DEBUG) puts("3");
         return LEN_ZERO; // invalid input
     }
     request->length = length;
@@ -100,11 +47,9 @@ int read_request(int connect_fd, message *request) {
     uint8_t *payload = malloc(sizeof(uint8_t) * length);
     num = recv(connect_fd, payload, length, 0);
     if (num <= 0) {
-        if (DEBUG) puts("4");
         return CON_CLS; //Connection closed
     }
     if (num != length) {
-        if (DEBUG) puts("5");
         return INVALID_MSG; // invalid input
     }
     request->payload = payload;
@@ -319,13 +264,11 @@ void *connection_handler(void *arg) {
         int error = read_request(data->connect_fd, request);
 
         if (error == CON_CLS) {
-            if (DEBUG) puts("6");
             // Connection is closed
             close(data->connect_fd);
             break;
         }
         if (error == INVALID_MSG) {
-            if (DEBUG) puts("7");
             // Error occurs
             send_error(data->connect_fd);
             break;

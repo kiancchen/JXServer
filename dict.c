@@ -1,4 +1,4 @@
-#include "dict.h"
+#include "util.h"
 
 
 size_t file_size(FILE *fp) {

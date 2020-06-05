@@ -1,10 +1,8 @@
 #ifndef LINKED_LIST_H_
 #define LINKED_LIST_H_
 
-#include <pthread.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
+#include "util.h"
+
 #define NON_EXIST 0
 #define EXIST 1
 #define SAME_ID_DIFF_OTHER_QUERYED 2

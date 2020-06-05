@@ -1,10 +1,8 @@
 #ifndef DICT_H_
 #define DICT_H_
 
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "util.h"
+#include <dirent.h>
 
 #define upper_divide(a, b) ((a % b == 0) ? (a / b) : ((a / b) + 1))
 #define len_padding(a) (((a % 8) == 0) ? (0) : (8 - (a % 8)))
