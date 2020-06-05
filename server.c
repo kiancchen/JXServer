@@ -166,17 +166,18 @@ void echo_handler(const struct data *data, const message *request) {
         // Modify the header
         response[0] = make_header(0x1, request->header->compressed, 0);
     } else {
-        uint64_t compressed_length = get_code_length(&dict, request->payload,length);
-        compressed_length = upper_divide(compressed_length, 8) + 1; // add the bytes of padding length
-
-        response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
-        response[0] = make_header(0x1, 1, 0);
-        uint64_to_uint8(response + 1, htobe64(compressed_length));
-        uint8_t *compressed = compress(&dict, request->payload, length);
-        memcpy(response + 9, compressed, compressed_length);
-
-        length = compressed_length + HEADER_LENGTH;
-        free(compressed);
+        compress_response(&response, request->payload, &length, 0x1);
+//        uint64_t compressed_length = get_code_length(&dict, request->payload,length);
+//        compressed_length = upper_divide(compressed_length, 8) + 1; // add the bytes of padding length
+//
+//        response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
+//        response[0] = make_header(0x1, 1, 0);
+//        uint64_to_uint8(response + 1, htobe64(compressed_length));
+//        uint8_t *compressed = compress(&dict, request->payload, length);
+//        memcpy(response + 9, compressed, compressed_length);
+//
+//        length = compressed_length + HEADER_LENGTH;
+//        free(compressed);
     }
     // Send the response
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
