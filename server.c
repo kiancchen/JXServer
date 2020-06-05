@@ -484,6 +484,7 @@ void *connection_handler(void *arg) {
                 free(uncompressed_payload);
                 free(compressed);
             }
+            node->querying = 0;
             send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
             free(buffer);
             free(payload);
@@ -510,6 +511,7 @@ void *connection_handler(void *arg) {
 
 int main(int argc, char **argv) {
     pthread_mutex_init(&(queue.mutex), NULL);
+    queue.head = NULL;
     // read the in_address and port from config file
     struct in_addr inaddr;
     uint16_t port;
