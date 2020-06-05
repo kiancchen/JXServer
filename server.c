@@ -266,20 +266,20 @@ void decompress_payload(const message *request, uint8_t **request_payload, uint6
     }
 }
 
-
-void retrieve_get_info(uint8_t *payload, uint32_t *id, uint64_t *starting, uint64_t *len_data) {
-    // get the session id
-    memcpy(id, payload, 4);
-    *id = htobe32(*id);
-
-    // get the starting offset
-    memcpy(starting, payload + 4, 8);
-    *starting = htobe64(*starting);
-
-    // get the length of data required
-    memcpy(len_data, payload + 12, 8);
-    *len_data = htobe64(*len_data);
-}
+//
+//void retrieve_get_info(uint8_t *payload, uint32_t *id, uint64_t *starting, uint64_t *len_data) {
+//    // get the session id
+//    memcpy(id, payload, 4);
+//    *id = htobe32(*id);
+//
+//    // get the starting offset
+//    memcpy(starting, payload + 4, 8);
+//    *starting = htobe64(*starting);
+//
+//    // get the length of data required
+//    memcpy(len_data, payload + 12, 8);
+//    *len_data = htobe64(*len_data);
+//}
 
 /**
  *
@@ -346,10 +346,19 @@ void *connection_handler(void *arg) {
             uint64_t length;
             decompress_payload(request, &request_payload, &length);
             // get the information from the payload: session id; starting offset; data length;
-            uint32_t id = 0;
-            uint64_t starting = 0;
-            uint64_t len_data = 0;
-            retrieve_get_info(request_payload, &id, &starting, &length);
+            uint32_t id;
+            memcpy(&id, request_payload, 4);
+            id = htobe32(id);
+
+            // get the starting offset
+            uint64_t starting;
+            memcpy(&starting, request_payload + 4, 8);
+            starting = htobe64(starting);
+
+            // get the length of data required
+            uint64_t len_data;
+            memcpy(&len_data, request_payload + 12, 8);
+            len_data = htobe64(len_data);
 
             // Concatenate the filename
             uint64_t len_filename = length - RETRIEVE_INFO_LEN;
