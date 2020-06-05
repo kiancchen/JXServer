@@ -220,22 +220,6 @@ void directory_list_handler(const struct data *data, const message *request) {
     free(payload);
 }
 
-//void aaa(const uint8_t *payload, uint8_t **response, uint64_t *length) {// get the compressed length of payload
-//    uint64_t compressed_length = get_code_length(&dict, payload, (*length));
-//    compressed_length = upper_divide(compressed_length, 8) + 1;
-//    // make the response
-//    (*response) = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
-//    (*response)[0] = make_header(0x3, 1, 0);
-//    // fill the payload length bytes
-//    uint64_to_uint8((*response) + 1, htobe64(compressed_length));
-//    // get the compressed payload and copy to the response
-//    uint8_t *compressed = compress(&dict, payload, (*length));
-//    memcpy((*response) + 9, compressed, compressed_length);
-//    // the final length of the whole response
-//    (*length) = compressed_length + HEADER_LENGTH;
-//    free(compressed);
-//}
-
 void file_size_handler(const struct data *data, const message *request, size_t sz) {
     // convert to network byte order
     uint64_t length = 8;
@@ -275,21 +259,6 @@ void decompress_payload(const message *request, uint8_t **request_payload, uint6
         (*request_payload) = decompress(&dict, request->payload, request->length, length);
     }
 }
-
-//
-//void retrieve_get_info(uint8_t *payload, uint32_t *id, uint64_t *starting, uint64_t *len_data) {
-//    // get the session id
-//    memcpy(id, payload, 4);
-//    *id = htobe32(*id);
-//
-//    // get the starting offset
-//    memcpy(starting, payload + 4, 8);
-//    *starting = htobe64(*starting);
-//
-//    // get the length of data required
-//    memcpy(len_data, payload + 12, 8);
-//    *len_data = htobe64(*len_data);
-//}
 
 /**
  *
@@ -355,7 +324,7 @@ void *connection_handler(void *arg) {
             uint8_t *request_payload;
             uint64_t length;
             decompress_payload(request, &request_payload, &length);
-            // get the information from the payload: session id; starting offset; data length;
+            // get the information from the file_data: session id; starting offset; data length;
             uint32_t id;
             memcpy(&id, request_payload, 4);
             id = htobe32(id);
@@ -406,9 +375,9 @@ void *connection_handler(void *arg) {
             fread(buffer, sizeof(char), sz, f);
             fclose(f);
 
-            //make the payload
-            uint8_t *payload = malloc(sizeof(uint8_t) * len_data);
-            memcpy(payload, buffer + starting, len_data);
+            //make the file_data
+            uint8_t *file_data = malloc(sizeof(uint8_t) * len_data);
+            memcpy(file_data, buffer + starting, len_data);
             // make the response
             uint8_t *response;
 
@@ -417,12 +386,12 @@ void *connection_handler(void *arg) {
                 // make the response
                 response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
                 response[0] = make_header(0x7, 0, 0);
-                // make the payload length
+                // make the file_data length
                 uint64_to_uint8(response + 1, htobe64(length));
                 // fill the file info
                 memcpy(response + 9, request_payload, RETRIEVE_INFO_LEN);
                 // fill the file data
-                memcpy(response + 29, payload, len_data);
+                memcpy(response + 29, file_data, len_data);
 
                 length += HEADER_LENGTH;
             } else {
@@ -430,31 +399,29 @@ void *connection_handler(void *arg) {
                 // Concatenate the payloads
                 uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
                 memcpy(uncompressed_payload, request_payload, 20);
-                memcpy(uncompressed_payload + 20, payload, len_data);
-
-                // Get the length of compressed payload
-                uint64_t compressed_length = get_code_length(&dict, uncompressed_payload, length);
-                compressed_length = upper_divide(compressed_length, 8) + 1;
-                // make the response
-                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
-                response[0] = make_header(0x7, 1, 0);
-                // fill the payload length bytes
-                uint64_to_uint8(response + 1, htobe64(compressed_length));
-                // get the compressed payload and copy to the response
-                uint8_t *compressed = compress(&dict, uncompressed_payload, length);
-                memcpy(response + 9, compressed, compressed_length);
-
-
-                // the final length of the whole response
-                length = compressed_length + HEADER_LENGTH;
-                free(uncompressed_payload);
-                free(compressed);
+                memcpy(uncompressed_payload + 20, file_data, len_data);
+                compress_response(&response, uncompressed_payload, &length, 0x7);
+//                // Get the length of compressed file_data
+//                uint64_t compressed_length = get_code_length(&dict, uncompressed_payload, length);
+//                compressed_length = upper_divide(compressed_length, 8) + 1;
+//                // make the response
+//                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
+//                response[0] = make_header(0x7, 1, 0);
+//                // fill the file_data length bytes
+//                uint64_to_uint8(response + 1, htobe64(compressed_length));
+//                // get the compressed file_data and copy to the response
+//                uint8_t *compressed = compress(&dict, uncompressed_payload, length);
+//                memcpy(response + 9, compressed, compressed_length);
+//                // the final length of the whole response
+//                length = compressed_length + HEADER_LENGTH;
+//                free(uncompressed_payload);
+//                free(compressed);
             }
 
             node->querying = 0;
             send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
             free(buffer);
-            free(payload);
+            free(file_data);
             free(response);
         } else if (type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
