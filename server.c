@@ -223,10 +223,10 @@ void compress_response(uint8_t *response, const uint8_t *payload, uint64_t *leng
     // fill the payload length bytes
     uint64_to_uint8(response + 1, htobe64(compressed_length));
     // get the compressed payload and copy to the response
-    uint8_t *compressed = compress(&dict, payload, (*length));
+    uint8_t *compressed = compress(&dict, payload, *length);
     memcpy(response + 9, compressed, compressed_length);
     // the final length of the whole response
-    (*length) = compressed_length + HEADER_LENGTH;
+    *length = compressed_length + HEADER_LENGTH;
     free(compressed);
 }
 
