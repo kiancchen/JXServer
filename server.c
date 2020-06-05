@@ -428,11 +428,16 @@ void *connection_handler(void *arg) {
                 memcpy(response + 29, payload, *len_data);
                 length += HEADER_LENGTH;
             } else {
+                puts("Need compression");
                 length = 20 + *len_data;
                 // Concatenate the payloads
                 uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
                 memcpy(uncompressed_payload, request_payload, 20);
                 memcpy(uncompressed_payload + 20, payload, *len_data);
+                puts("Before compression:");
+                for (int i = 0; i < length; ++i) {
+                    printf("%x ", uncompressed_payload[i]);
+                }
                 // Get the length of compressed payload
                 uint64_t compressed_length = get_code_length(&dict, uncompressed_payload, length);
                 compressed_length = upper_divide(compressed_length, 8) + 1;
@@ -444,6 +449,11 @@ void *connection_handler(void *arg) {
                 // get the compressed payload and copy to the response
                 uint8_t *compressed = compress(&dict, uncompressed_payload, length);
                 memcpy(response + 9, compressed, compressed_length);
+                puts("After compression:");
+                for (int i = 0; i < compressed_length; ++i) {
+                    printf("%x ", compressed[i]);
+                }
+
                 // the final length of the whole response
                 length = compressed_length + HEADER_LENGTH;
                 free(uncompressed_payload);
