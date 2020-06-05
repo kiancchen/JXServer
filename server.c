@@ -4,8 +4,6 @@ struct dict dict;
 char *dir_path;
 struct linked_list queue;
 
-void aaa(const uint8_t *payload, uint8_t **response, uint64_t *length);
-
 /**
  *
  * @param connect_fd Connection file description
@@ -167,17 +165,6 @@ void echo_handler(const struct data *data, const message *request) {
         response[0] = make_header(0x1, request->header->compressed, 0);
     } else {
         compress_response(&response, request->payload, &length, 0x1);
-//        uint64_t compressed_length = get_code_length(&dict, request->payload,length);
-//        compressed_length = upper_divide(compressed_length, 8) + 1; // add the bytes of padding length
-//
-//        response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
-//        response[0] = make_header(0x1, 1, 0);
-//        uint64_to_uint8(response + 1, htobe64(compressed_length));
-//        uint8_t *compressed = compress(&dict, request->payload, length);
-//        memcpy(response + 9, compressed, compressed_length);
-//
-//        length = compressed_length + HEADER_LENGTH;
-//        free(compressed);
     }
     // Send the response
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
@@ -401,21 +388,6 @@ void *connection_handler(void *arg) {
                 memcpy(uncompressed_payload, request_payload, 20);
                 memcpy(uncompressed_payload + 20, file_data, len_data);
                 compress_response(&response, uncompressed_payload, &length, 0x7);
-//                // Get the length of compressed file_data
-//                uint64_t compressed_length = get_code_length(&dict, uncompressed_payload, length);
-//                compressed_length = upper_divide(compressed_length, 8) + 1;
-//                // make the response
-//                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
-//                response[0] = make_header(0x7, 1, 0);
-//                // fill the file_data length bytes
-//                uint64_to_uint8(response + 1, htobe64(compressed_length));
-//                // get the compressed file_data and copy to the response
-//                uint8_t *compressed = compress(&dict, uncompressed_payload, length);
-//                memcpy(response + 9, compressed, compressed_length);
-//                // the final length of the whole response
-//                length = compressed_length + HEADER_LENGTH;
-//                free(uncompressed_payload);
-//                free(compressed);
             }
 
             node->querying = 0;
