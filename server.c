@@ -431,7 +431,7 @@ void *connection_handler(void *arg) {
                 // fill the file data
                 memcpy(response + 29, payload, *len_data);
                 for (int i = 0; i < 20 + *len_data; ++i) {
-                    printf("%x ", *response + 9 + i)
+                    printf("%x ", *response + 9 + i);
                 }
                 length += HEADER_LENGTH;
             } else {
