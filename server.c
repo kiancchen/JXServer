@@ -12,6 +12,7 @@
 #include "dict.h"
 #include "helper_func.h"
 #include "directory.h"
+#include "linked_list.h"
 //#include <libkern/OSByteOrder.h>
 
 #define DEBUG (0)
@@ -45,6 +46,7 @@ struct data {
 
 struct dict dict;
 char *dir_path;
+struct linked_list queue;
 
 /**
  *
@@ -178,6 +180,14 @@ void send_error(int connect_fd) {
     uint64_t error_payload = 0x0;
     send(connect_fd, &error_header, sizeof(uint8_t), 0);
     send(connect_fd, &error_payload, sizeof(uint64_t), 0);
+    close(connect_fd);
+}
+
+void send_empty_retrieve(int connect_fd) {
+    uint8_t header = make_header(0x7, 0, 0);
+    uint64_t payload = 0x0;
+    send(connect_fd, &header, sizeof(uint8_t), 0);
+    send(connect_fd, &payload, sizeof(uint64_t), 0);
     close(connect_fd);
 }
 
@@ -393,6 +403,27 @@ void *connection_handler(void *arg) {
             filename[strlen(dir_path)] = '/';
             memcpy(filename + strlen(dir_path) + 1, request_payload + 20, len_filename);
 //            printf("Filename: %s\n", filename);
+
+            // process request queue
+            struct node *node = new_node(filename, *id, *starting, *len_data);
+            pthread_mutex_lock(&(queue.mutex));
+            uint8_t signal = list_contains(&queue, node);
+            if (signal == NON_EXIST) {
+                add_node(&queue, node);
+            } else if (signal == EXIST) {
+                send_empty_retrieve(data->connect_fd);
+                pthread_mutex_unlock(&(queue.mutex));
+                break;
+            } else if (signal == SAME_ID_DIFF_OTHER_QUERYING) {
+                send_error(data->connect_fd);
+                pthread_mutex_unlock(&(queue.mutex));
+                break;
+            } else if (signal == SAME_ID_DIFF_OTHER_QUERYED) {
+                add_node(&queue, node);
+            }
+            pthread_mutex_unlock(&(queue.mutex));
+
+
             FILE *f = fopen(filename, "r");
             free(filename);
             if (!f) {
@@ -478,6 +509,7 @@ void *connection_handler(void *arg) {
 }
 
 int main(int argc, char **argv) {
+    pthread_mutex_init(&(queue.mutex), NULL);
     // read the in_address and port from config file
     struct in_addr inaddr;
     uint16_t port;
@@ -534,6 +566,7 @@ int main(int argc, char **argv) {
         pthread_t thread;
         pthread_create(&thread, NULL, connection_handler, data);
     }
+    pthread_mutex_destroy(&(queue.mutex));
     free(dir_path);
     close(listenfd);
     return 0;
