@@ -214,17 +214,17 @@ void directory_list_handler(const struct data *data, const message *request) {
     free(payload);
 }
 
-void compress_response(uint8_t *response, const uint8_t *payload, uint64_t *length) {
+void compress_response(uint8_t **response, const uint8_t *payload, uint64_t *length) {
     uint64_t compressed_length = get_code_length(&dict, payload, length);
     compressed_length = upper_divide(compressed_length, 8) + 1;
     // make the response
-    response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
-    response[0] = make_header(0x5, 1, 0);
+    *response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
+    (*response)[0] = make_header(0x5, 1, 0);
     // fill the payload length bytes
-    uint64_to_uint8(response + 1, htobe64(compressed_length));
+    uint64_to_uint8((*response) + 1, htobe64(compressed_length));
     // get the compressed payload and copy to the response
     uint8_t *compressed = compress(&dict, payload, *length);
-    memcpy(response + 9, compressed, compressed_length);
+    memcpy((*response) + 9, compressed, compressed_length);
     // the final length of the whole response
     *length = compressed_length + HEADER_LENGTH;
     free(compressed);
