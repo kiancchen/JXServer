@@ -46,3 +46,15 @@ void add_node(struct linked_list* linked_list, struct node *node){
     }
     cur->next = node;
 }
+
+void destroy_linked_list(struct linked_list* linked_list){
+    struct node *cur = linked_list->head;
+
+    while (cur != NULL) {
+        struct node *temp = cur;
+        cur = cur->next;
+        free(temp->filename);
+        free(temp);
+    }
+
+}

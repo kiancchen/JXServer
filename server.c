@@ -10,7 +10,7 @@ struct linked_list queue;
  * @param request where to stores the request
  * @return 0 for connection closed; 1 for invalid input; 2 for success
  */
-int read_request(int connect_fd, message *request) {
+uint8_t read_request(int connect_fd, message *request) {
     // init as NULL
     request->header = NULL;
     request->payload = NULL;
@@ -257,6 +257,15 @@ char *concatenate_filename(uint8_t *payload, uint64_t length) {
     return filename;
 }
 
+void decompress_payload(const message *request, uint8_t **request_payload, uint64_t *length) {
+    if (request->header->compressed == (unsigned) 0) {
+        (*request_payload) = request->payload;
+        (*length) = request->length;
+    } else {
+        (*request_payload) = decompress(&dict, request->payload, request->length, length);
+    }
+}
+
 /**
  *
  * @param arg data where stores the connect_fd and request message
@@ -270,7 +279,7 @@ void *connection_handler(void *arg) {
         data->msg = request;
 
         // Read the header, payload length and payload
-        int error = read_request(data->connect_fd, request);
+        uint8_t error = read_request(data->connect_fd, request);
 
         if (error == CON_CLS) {
             // Connection is closed
@@ -320,16 +329,11 @@ void *connection_handler(void *arg) {
         } else if (type == (unsigned) 0x6) {
             uint8_t *request_payload;
             uint64_t length;
-            if (request->header->compressed == 0) {
-                request_payload = request->payload;
-                length = request->length;
-            } else {
-                request_payload = decompress(&dict, request->payload, request->length, &length);
-            }
+            decompress_payload(request, &request_payload, &length);
             // get the session id
-            uint32_t id[1];
-            memcpy(id, request_payload, 4);
-            *id = htobe32(*id);
+            uint32_t id;
+            memcpy(&id, request_payload, 4);
+            id = htobe32(id);
 
             // get the starting offset
             uint64_t starting[1];
@@ -346,7 +350,7 @@ void *connection_handler(void *arg) {
             char *filename = concatenate_filename(request_payload + 20, len_filename);
 
             // process request queue
-            struct node *node = new_node(filename, *id, *starting, *len_data);
+            struct node *node = new_node(filename, id, *starting, *len_data);
             pthread_mutex_lock(&(queue.mutex));
             uint8_t signal = list_contains(&queue, node);
             if (signal == NON_EXIST) {
@@ -421,12 +425,12 @@ void *connection_handler(void *arg) {
                 free(uncompressed_payload);
                 free(compressed);
             }
+
             node->querying = 0;
             send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
             free(buffer);
             free(payload);
             free(response);
-
         } else if (type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
@@ -504,6 +508,7 @@ int main(int argc, char **argv) {
         pthread_t thread;
         pthread_create(&thread, NULL, connection_handler, data);
     }
+    destroy_linked_list(&queue);
     pthread_mutex_destroy(&(queue.mutex));
     free(dir_path);
     close(listenfd);

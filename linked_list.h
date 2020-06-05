@@ -28,4 +28,6 @@ uint8_t list_contains(struct linked_list *linked_list, struct node *node);
 
 void add_node(struct linked_list* linked_list, struct node *node);
 
+void destroy_linked_list(struct linked_list* linked_list);
+
 #endif
