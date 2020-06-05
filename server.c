@@ -336,21 +336,21 @@ void *connection_handler(void *arg) {
             id = htobe32(id);
 
             // get the starting offset
-            uint64_t starting[1];
-            memcpy(starting, request_payload + 4, 8);
-            *starting = htobe64(*starting);
+            uint64_t starting;
+            memcpy(&starting, request_payload + 4, 8);
+            starting = htobe64(starting);
 
             // get the length of data required
-            uint64_t len_data[1];
-            memcpy(len_data, request_payload + 12, 8);
-            *len_data = htobe64(*len_data);
+            uint64_t len_data;
+            memcpy(&len_data, request_payload + 12, 8);
+            len_data = htobe64(len_data);
 
             // Concatenate the filename
             uint64_t len_filename = length - 20;
             char *filename = concatenate_filename(request_payload + 20, len_filename);
 
             // process request queue
-            struct node *node = new_node(filename, id, *starting, *len_data);
+            struct node *node = new_node(filename, id, starting, len_data);
             pthread_mutex_lock(&(queue.mutex));
             uint8_t signal = list_contains(&queue, node);
             if (signal == NON_EXIST) {
@@ -373,7 +373,7 @@ void *connection_handler(void *arg) {
             FILE *f = fopen(filename, "r");
             free(filename);
             size_t sz;
-            if (!f || (*starting + *len_data) > (sz = file_size(f))) {
+            if (!f || (starting + len_data) > (sz = file_size(f))) {
                 send_error(data->connect_fd);
                 break;
             }
@@ -382,13 +382,13 @@ void *connection_handler(void *arg) {
             fclose(f);
 
             //make the payload
-            uint8_t *payload = malloc(sizeof(uint8_t) * *len_data);
-            memcpy(payload, buffer + *starting, *len_data);
+            uint8_t *payload = malloc(sizeof(uint8_t) * len_data);
+            memcpy(payload, buffer + starting, len_data);
             // make the response
             uint8_t *response;
 
             if (request->header->req_compress == (unsigned) 0) {
-                length = *len_data + 20;
+                length = len_data + 20;
                 // make the response
                 response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
                 response[0] = make_header(0x7, 0, 0);
@@ -397,15 +397,15 @@ void *connection_handler(void *arg) {
                 // fill the file info
                 memcpy(response + 9, request_payload, 20);
                 // fill the file data
-                memcpy(response + 29, payload, *len_data);
+                memcpy(response + 29, payload, len_data);
 
                 length += HEADER_LENGTH;
             } else {
-                length = 20 + *len_data;
+                length = 20 + len_data;
                 // Concatenate the payloads
                 uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
                 memcpy(uncompressed_payload, request_payload, 20);
-                memcpy(uncompressed_payload + 20, payload, *len_data);
+                memcpy(uncompressed_payload + 20, payload, len_data);
 
                 // Get the length of compressed payload
                 uint64_t compressed_length = get_code_length(&dict, uncompressed_payload, length);
