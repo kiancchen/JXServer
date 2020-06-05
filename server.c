@@ -248,6 +248,15 @@ void file_size_handler(const struct data *data, const message *request, size_t s
     free(response);
 }
 
+char *concatenate_filename(uint8_t *payload, uint64_t length) {
+    char *filename = malloc(sizeof(char) * (strlen(dir_path) + length + 2));
+    filename[strlen(dir_path) + length + 1] = '\0';
+    memcpy(filename, dir_path, strlen(dir_path));
+    filename[strlen(dir_path)] = '/';
+    memcpy(filename + strlen(dir_path) + 1, payload, length);
+    return filename;
+}
+
 /**
  *
  * @param arg data where stores the connect_fd and request message
@@ -296,11 +305,7 @@ void *connection_handler(void *arg) {
                 break;
             }
 
-            char *filename = malloc(sizeof(char) * (strlen(dir_path) + request->length + 2));
-            filename[strlen(dir_path) + request->length + 1] = '\0';
-            memcpy(filename, dir_path, strlen(dir_path));
-            filename[strlen(dir_path)] = '/';
-            memcpy(filename + strlen(dir_path) + 1, request->payload, request->length);
+            char *filename = concatenate_filename(request->payload, request->length);
             FILE *f = fopen(filename, "r");
             if (!f) {
                 send_error(data->connect_fd);
@@ -340,11 +345,7 @@ void *connection_handler(void *arg) {
 
             // Concatenate the filename
             uint64_t len_filename = length - 20;
-            char *filename = malloc(sizeof(char) * (strlen(dir_path) + len_filename + 2));
-            filename[strlen(dir_path) + len_filename + 1] = '\0';
-            memcpy(filename, dir_path, strlen(dir_path));
-            filename[strlen(dir_path)] = '/';
-            memcpy(filename + strlen(dir_path) + 1, request_payload + 20, len_filename);
+            char *filename = concatenate_filename(request_payload, len_filename);
 //            printf("Filename: %s\n", filename);
 
             // process request queue
@@ -492,7 +493,6 @@ int main(int argc, char **argv) {
         perror("listen_listenfd error");
         exit(EXIT_FAILURE);
     }
-
 
     while (1) {
         // Accept the connection request from the client
