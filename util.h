@@ -24,6 +24,7 @@
 #define LEN_ZERO (3)
 #define make_header(type, com, req) (type << 4 | com << 3 | req << 2)
 #define HEADER_LENGTH (9)
+#define RETRIEVE_INFO_LEN (20)
 
 struct header {
     unsigned type: 4;
