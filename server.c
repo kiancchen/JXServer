@@ -214,6 +214,22 @@ void directory_list_handler(const struct data *data, const message *request) {
     free(payload);
 }
 
+void compress_response(uint8_t *response, const uint8_t *payload, uint64_t *length) {
+    uint64_t compressed_length = get_code_length(&dict, payload, 8);
+    compressed_length = upper_divide(compressed_length, 8) + 1;
+    // make the response
+    response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
+    response[0] = make_header(0x5, 1, 0);
+    // fill the payload length bytes
+    uint64_to_uint8(response + 1, htobe64(compressed_length));
+    // get the compressed payload and copy to the response
+    uint8_t *compressed = compress(&dict, payload, (*length));
+    memcpy(response + 9, compressed, compressed_length);
+    // the final length of the whole response
+    (*length) = compressed_length + HEADER_LENGTH;
+    free(compressed);
+}
+
 void file_size_handler(const struct data *data, const message *request, size_t sz) {
     // convert to network byte order
     uint64_t length = 8;
@@ -229,19 +245,7 @@ void file_size_handler(const struct data *data, const message *request, size_t s
         memcpy(response + 9, payload, length);
         length += HEADER_LENGTH;
     } else {
-        uint64_t compressed_length = get_code_length(&dict, payload, 8);
-        compressed_length = upper_divide(compressed_length, 8) + 1;
-        // make the response
-        response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + compressed_length));
-        response[0] = make_header(0x5, 1, 0);
-        // fill the payload length bytes
-        uint64_to_uint8(response + 1, htobe64(compressed_length));
-        // get the compressed payload and copy to the response
-        uint8_t *compressed = compress(&dict, payload, length);
-        memcpy(response + 9, compressed, compressed_length);
-        // the final length of the whole response
-        length = compressed_length + HEADER_LENGTH;
-        free(compressed);
+        compress_response(&response, payload, &length);
     }
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
     free(payload);
