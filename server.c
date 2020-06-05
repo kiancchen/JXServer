@@ -365,25 +365,25 @@ void *connection_handler(void *arg) {
             pthread_mutex_unlock(&(queue.mutex));
             // end of queue process
 
-
+            // open and read the file
             FILE *f = fopen(filename, "r");
             free(filename);
-            if (!f || (*starting + *len_data) > file_size(f)) {
+            size_t sz;
+            if (!f || (*starting + *len_data) > (sz = file_size(f))) {
                 send_error(data->connect_fd);
                 break;
             }
-
             char *buffer = malloc(sizeof(char) * sz);
             fread(buffer, sizeof(char), sz, f);
             fclose(f);
-            //make the payload
 
+            //make the payload
             uint8_t *payload = malloc(sizeof(uint8_t) * *len_data);
             memcpy(payload, buffer + *starting, *len_data);
             // make the response
             uint8_t *response;
 
-            if (request->header->req_compress == 0) {
+            if (request->header->req_compress == (unsigned) 0) {
                 length = *len_data + 20;
                 // make the response
                 response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
