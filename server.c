@@ -326,27 +326,24 @@ void *connection_handler(void *arg) {
             } else {
                 request_payload = decompress(&dict, request->payload, request->length, &length);
             }
-
-
+            // get the session id
             uint32_t id[1];
             memcpy(id, request_payload, 4);
             *id = htobe32(*id);
-//            printf("id: %u\n", *id);
 
+            // get the starting offset
             uint64_t starting[1];
             memcpy(starting, request_payload + 4, 8);
             *starting = htobe64(*starting);
-//            printf("Starting: %lu\n", *starting);
 
+            // get the length of data required
             uint64_t len_data[1];
             memcpy(len_data, request_payload + 12, 8);
             *len_data = htobe64(*len_data);
-//            printf("len data: %lu\n", *len_data);
 
             // Concatenate the filename
             uint64_t len_filename = length - 20;
-            char *filename = concatenate_filename(request_payload, len_filename);
-//            printf("Filename: %s\n", filename);
+            char *filename = concatenate_filename(request_payload + 20, len_filename);
 
             // process request queue
             struct node *node = new_node(filename, *id, *starting, *len_data);
@@ -366,20 +363,16 @@ void *connection_handler(void *arg) {
                 add_node(&queue, node);
             }
             pthread_mutex_unlock(&(queue.mutex));
+            // end of queue process
 
 
             FILE *f = fopen(filename, "r");
             free(filename);
-            if (!f) {
+            if (!f || (*starting + *len_data) > file_size(f)) {
                 send_error(data->connect_fd);
                 break;
             }
-            size_t sz = file_size(f);
-            if ((*starting + *len_data) > sz) {
 
-                send_error(data->connect_fd);
-                break;
-            }
             char *buffer = malloc(sizeof(char) * sz);
             fread(buffer, sizeof(char), sz, f);
             fclose(f);
