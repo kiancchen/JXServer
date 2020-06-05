@@ -363,9 +363,11 @@ void *connection_handler(void *arg) {
             uint8_t *request_payload;
             uint64_t length;
             if (request->header->compressed == 0) {
+                puts("Uncompressed");
                 request_payload = request->payload;
                 length = request->length;
             } else {
+                puts("Compressed");
                 request_payload = decompress(&dict, request->payload, request->length, &length);
             }
 
@@ -416,6 +418,7 @@ void *connection_handler(void *arg) {
             uint8_t *response;
 
             if (request->header->req_compress == 0) {
+                puts("Do not need compression");
                 length = sz - *starting + 20;
                 // make the response
                 response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
