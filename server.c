@@ -374,6 +374,7 @@ void *connection_handler(void *arg) {
             memcpy(id, request_payload, 4);
             *id = htobe32(*id);
             printf("id: %u\n", *id);
+
             uint64_t starting[1];
             memcpy(starting, request_payload + 4, 8);
             *starting = htobe64(*starting);
@@ -391,7 +392,7 @@ void *connection_handler(void *arg) {
             memcpy(filename, dir_path, strlen(dir_path));
             filename[strlen(dir_path)] = '/';
             memcpy(filename + strlen(dir_path) + 1, request_payload + 20, len_filename);
-//            printf("Filename: %s\n", filename);
+            printf("Filename: %s\n", filename);
             FILE *f = fopen(filename, "r");
             free(filename);
             if (!f) {
