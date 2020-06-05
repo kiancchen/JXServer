@@ -407,6 +407,7 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
+            printf("Size of file: %zu\n", sz);
             char *buffer = malloc(sizeof(char) * sz);
             fread(buffer, sizeof(char), sz, f);
             fclose(f);
