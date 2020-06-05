@@ -363,11 +363,9 @@ void *connection_handler(void *arg) {
             uint8_t *request_payload;
             uint64_t length;
             if (request->header->compressed == 0) {
-                puts("Uncompressed");
                 request_payload = request->payload;
                 length = request->length;
             } else {
-                puts("Compressed");
                 request_payload = decompress(&dict, request->payload, request->length, &length);
             }
 
@@ -375,17 +373,17 @@ void *connection_handler(void *arg) {
             uint32_t id[1];
             memcpy(id, request_payload, 4);
             *id = htobe32(*id);
-            printf("id: %u\n", *id);
+//            printf("id: %u\n", *id);
 
             uint64_t starting[1];
             memcpy(starting, request_payload + 4, 8);
             *starting = htobe64(*starting);
-            printf("Starting: %lu\n", *starting);
+//            printf("Starting: %lu\n", *starting);
 
             uint64_t len_data[1];
             memcpy(len_data, request_payload + 12, 8);
             *len_data = htobe64(*len_data);
-            printf("len data: %lu\n", *len_data);
+//            printf("len data: %lu\n", *len_data);
 
             // Concatenate the filename
             uint64_t len_filename = length - 20;
@@ -394,7 +392,7 @@ void *connection_handler(void *arg) {
             memcpy(filename, dir_path, strlen(dir_path));
             filename[strlen(dir_path)] = '/';
             memcpy(filename + strlen(dir_path) + 1, request_payload + 20, len_filename);
-            printf("Filename: %s\n", filename);
+//            printf("Filename: %s\n", filename);
             FILE *f = fopen(filename, "r");
             free(filename);
             if (!f) {
@@ -407,7 +405,6 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
-            printf("Size of file: %zu\n", sz);
             char *buffer = malloc(sizeof(char) * sz);
             fread(buffer, sizeof(char), sz, f);
             fclose(f);
@@ -419,15 +416,12 @@ void *connection_handler(void *arg) {
             uint8_t *response;
 
             if (request->header->req_compress == 0) {
-                puts("Do not need compression");
                 length = *len_data + 20;
                 // make the response
                 response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
                 response[0] = make_header(0x7, 0, 0);
                 // make the payload length
-                printf("length: %lu\n", length);
                 uint64_to_uint8(response + 1, htobe64(length));
-                printf("length: %lu\n", htobe64(length));
                 // fill the file info
                 memcpy(response + 9, request_payload, 20);
                 // fill the file data
@@ -440,7 +434,6 @@ void *connection_handler(void *arg) {
                 uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
                 memcpy(uncompressed_payload, request_payload, 20);
                 memcpy(uncompressed_payload + 20, payload, *len_data);
-                puts("Before compression:");
 
                 // Get the length of compressed payload
                 uint64_t compressed_length = get_code_length(&dict, uncompressed_payload, length);
