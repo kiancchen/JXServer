@@ -425,14 +425,14 @@ void *connection_handler(void *arg) {
                 response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
                 response[0] = make_header(0x7, 0, 0);
                 // make the payload length
+                printf("length: %lu\n", length);
                 uint64_to_uint8(response + 1, htobe64(length));
+                printf("length: %lu\n", htobe64(length));
                 // fill the file info
                 memcpy(response + 9, request_payload, 20);
                 // fill the file data
                 memcpy(response + 29, payload, *len_data);
-                for (int i = 0; i < 20 + *len_data; ++i) {
-                    printf("%x ", *response + 9 + i);
-                }
+
                 length += HEADER_LENGTH;
             } else {
                 length = 20 + *len_data;
