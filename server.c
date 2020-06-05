@@ -420,7 +420,7 @@ void *connection_handler(void *arg) {
 
             if (request->header->req_compress == 0) {
                 puts("Do not need compression");
-                length = sz - *starting + 20;
+                length = *len_data + 20;
                 // make the response
                 response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
                 response[0] = make_header(0x7, 0, 0);
