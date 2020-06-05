@@ -245,7 +245,7 @@ void file_size_handler(const struct data *data, const message *request, size_t s
         memcpy(response + 9, payload, length);
         length += HEADER_LENGTH;
     } else {
-        compress_response(&response, payload, &length);
+        compress_response(response, payload, &length);
     }
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
     free(payload);
