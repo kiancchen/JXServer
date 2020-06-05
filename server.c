@@ -352,8 +352,8 @@ void *connection_handler(void *arg) {
             retrieve_get_info(request_payload, &id, &starting, &length);
 
             // Concatenate the filename
-            uint64_t len_filename = length - 20;
-            char *filename = concatenate_filename(request_payload + 20, len_filename);
+            uint64_t len_filename = length - RETRIEVE_INFO_LEN;
+            char *filename = concatenate_filename(request_payload + RETRIEVE_INFO_LEN, len_filename);
 
             // process request queue
             struct node *node = new_node(filename, id, starting, len_data);
@@ -394,14 +394,14 @@ void *connection_handler(void *arg) {
             uint8_t *response;
 
             if (request->header->req_compress == (unsigned) 0) {
-                length = len_data + 20;
+                length = len_data + RETRIEVE_INFO_LEN;
                 // make the response
                 response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
                 response[0] = make_header(0x7, 0, 0);
                 // make the payload length
                 uint64_to_uint8(response + 1, htobe64(length));
                 // fill the file info
-                memcpy(response + 9, request_payload, 20);
+                memcpy(response + 9, request_payload, RETRIEVE_INFO_LEN);
                 // fill the file data
                 memcpy(response + 29, payload, len_data);
 
