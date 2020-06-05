@@ -3,7 +3,7 @@
 
 struct node *new_node(char *filename, uint32_t id, uint64_t starting, uint64_t length) {
     struct node *node = malloc(sizeof(struct node));
-    node->filename = filename;
+    strcpy(node->filename, filename)
     node->id = id;
     node->starting = starting;
     node->length = length;
