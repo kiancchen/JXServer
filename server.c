@@ -373,16 +373,16 @@ void *connection_handler(void *arg) {
             uint32_t id[1];
             memcpy(id, request_payload, 4);
             *id = htobe32(*id);
-
+            printf("id: %lu\n", *id);
             uint64_t starting[1];
             memcpy(starting, request_payload + 4, 8);
             *starting = htobe64(*starting);
-//            printf("Starting: %lu\n", *starting);
+            printf("Starting: %lu\n", *starting);
 
             uint64_t len_data[1];
             memcpy(len_data, request_payload + 12, 8);
             *len_data = htobe64(*len_data);
-//            printf("len data: %lu\n", *len_data);
+            printf("len data: %lu\n", *len_data);
 
             // Concatenate the filename
             uint64_t len_filename = length - 20;
