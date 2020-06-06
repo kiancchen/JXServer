@@ -58,7 +58,7 @@ void send_error(int connect_fd) {
     uint64_t error_payload = 0x0;
     send(connect_fd, &error_header, sizeof(uint8_t), 0);
     send(connect_fd, &error_payload, sizeof(uint64_t), 0);
-
+    close(connect_fd);
 }
 
 void send_empty_retrieve(int connect_fd) {

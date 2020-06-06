@@ -5,15 +5,7 @@ char *dir_path;
 struct linked_list queue;
 
 
-void shutdown_handler(int connect_fd, message *request) {
-    shutdown(connect_fd, SHUT_RDWR);
-    close(connect_fd);
-    free_request(request);
-    destroy_linked_list(&queue);
-    pthread_mutex_destroy(&(queue.mutex));
-    free(dir_path);
 
-}
 
 /**
  * Read the request from the client.
@@ -125,7 +117,7 @@ void *connection_handler(void *arg) {
 
         if (error == CON_CLS) {
             // Connection is closed
-
+            shutdown(connect_fd, SHUT_RDWR);
             close(connect_fd);
             free_request(request);
 //            close(connect_fd);
@@ -184,7 +176,13 @@ void *connection_handler(void *arg) {
 //                send_error(data->connect_fd);
 //                break;
 //            }
-            shutdown_handler(connect_fd, request);
+            shutdown(connect_fd, SHUT_RDWR);
+            close(connect_fd);
+            free_request(request);
+            destroy_linked_list(&queue);
+            pthread_mutex_destroy(&(queue.mutex));
+            free(dir_path);
+            exit(0);
             break;
 
         } else {
