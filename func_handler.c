@@ -156,7 +156,13 @@ void directory_list_handler(const struct data *data, struct dict *dict, char *di
 
 
 uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_path, const message *request) {
-    char *filename = concatenate_filename(request->payload, dir_path, request->length);
+    uint64_t length;
+    uint8_t *request_payload;
+    decompress_payload(dict, request, &request_payload, &length);
+
+
+    char *filename = concatenate_filename(request_payload, dir_path, length);
+    free(request_payload);
     FILE *f = fopen(filename, "r");
     if (!f) {
         return ERROR_OCCUR;
@@ -165,26 +171,25 @@ uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_
     fclose(f);
     free(filename);
     // convert to network byte order
-    uint64_t length = 8;
+    length = 8;
     uint64_t size_64 = htobe64(sz);
-    uint8_t *payload = malloc(sizeof(uint8_t) * length);
-    uint64_to_uint8(payload, size_64);
+    uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
+    uint64_to_uint8(uncompressed_payload, size_64);
 
     uint8_t *response;
     if (request->header->req_compress == (unsigned) 0) {
-        uncompressed_response(&response, payload, &length, 0x5);
+        uncompressed_response(&response, uncompressed_payload, &length, 0x5);
     } else {
-        compress_response(dict, &response, payload, &length, 0x5);
+        compress_response(dict, &response, uncompressed_payload, &length, 0x5);
     }
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
-    free(payload);
+    free(uncompressed_payload);
     free(response);
     return SUCCESS;
 }
 
 uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_path, struct linked_list *queue,
                          const message *request) {
-    uint8_t *response;
     uint64_t length;
     uint8_t *request_payload;
     decompress_payload(dict, request, &request_payload, &length);
@@ -250,7 +255,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     memcpy(uncompressed_payload + 20, file_data, len_data);
     free(file_data);
     // make the response
-
+    uint8_t *response;
     if (request->header->req_compress == (unsigned) 0) {
         uncompressed_response(&response, uncompressed_payload, &length, 0x7);
     } else {
