@@ -211,11 +211,13 @@ uint8_t retrieve_handler(int connect_fd, struct dict *dict, char *dir_path, stru
         send_empty_retrieve(connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
         free(filename);
+        free(request_payload);
         return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYING) {
         send_error(connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
         free(filename);
+        free(request_payload);
         return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYED) {
         add_node(queue, node);
@@ -229,6 +231,8 @@ uint8_t retrieve_handler(int connect_fd, struct dict *dict, char *dir_path, stru
     size_t sz;
     if (!f || (starting + len_data) > (sz = file_size(f))) {
         send_error(connect_fd);
+        free(filename);
+        free(request_payload);
         return ERROR_OCCUR;
     }
     char *buffer = malloc(sizeof(char) * sz);
