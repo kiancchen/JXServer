@@ -99,7 +99,7 @@ void compress_response(struct dict *dict, uint8_t **response, const uint8_t *pay
 
 void decompress_payload(struct dict *dict, const message *request, uint8_t **request_payload, uint64_t *length) {
     if (request->header->compressed == (unsigned) 0) {
-        (*length) = request->length;
+        (*length) = be64toh(request->length);
         (*request_payload) = malloc(sizeof(uint8_t) * *length);
         memcpy(*request_payload, request->payload, *length);
 
