@@ -121,14 +121,12 @@ void *connection_handler(void *arg) {
 
         if (error == CON_CLS) {
             // Connection is closed
-
             close(data->connect_fd);
             free_request(request);
             break;
         }
         if (error == INVALID_MSG) {
             // Error occurs
-
             send_error(data->connect_fd);
             free_request(request);
             break;
@@ -148,27 +146,33 @@ void *connection_handler(void *arg) {
             // Directory list Functionality
             if (error != LEN_ZERO) {
                 send_error(data->connect_fd);
+                free_request(request);
                 break;
             }
             directory_list_handler(data, &dict, dir_path, request);
-
+            free_request(request);
         } else if (type == (unsigned) 0x4) {
             // File size query Functionality
             if (error == LEN_ZERO) {
                 send_error(data->connect_fd);
+                free_request(request);
                 break;
             }
             if (file_size_handler(data, &dict, dir_path, request) == ERROR_OCCUR) {
                 // Error occurs
                 send_error(data->connect_fd);
+                free_request(request);
                 break;
             }
+            free_request(request);
 
         } else if (type == (unsigned) 0x6) {
             if (retrieve_handler(data, &dict, dir_path, &queue, request) == ERROR_OCCUR) {
                 // Error occurs
+                free_request(request);
                 break;
             }
+            free_request(request);
 
         } else if (type == (unsigned) 0x8) {
             free_request(request);
