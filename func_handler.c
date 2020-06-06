@@ -108,7 +108,7 @@ void decompress_payload(struct dict *dict, const message *request, uint8_t **req
     }
 }
 
-void echo_handler(const struct data *data, struct dict *dict, const message *request) {
+void echo_handler(int connect_fd, struct dict *dict, const message *request) {
     uint8_t *response;
     uint64_t length = request->length;
     if (request->header->compressed != (unsigned) 0 || request->header->req_compress != (unsigned) 1) {
@@ -122,11 +122,11 @@ void echo_handler(const struct data *data, struct dict *dict, const message *req
         compress_response(dict, &response, request->payload, &length, 0x1);
     }
     // Send the response
-    send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+    send(connect_fd, response, sizeof(uint8_t) * length, 0);
     free(response);
 }
 
-void directory_list_handler(const struct data *data, struct dict *dict, char *dir_path, const message *request) {
+void directory_list_handler(int connect_fd, struct dict *dict, char *dir_path, const message *request) {
     uint8_t *response;
     uint64_t length;
     // get the list of files
@@ -148,14 +148,14 @@ void directory_list_handler(const struct data *data, struct dict *dict, char *di
         compress_response(dict, &response, payload, &length, 0x3);
     }
 
-    send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+    send(connect_fd, response, sizeof(uint8_t) * length, 0);
     free(response);
     free(file_list);
     free(payload);
 }
 
 
-uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_path, const message *request) {
+uint8_t file_size_handler(int connect_fd, struct dict *dict, char *dir_path, const message *request) {
     char *filename = concatenate_filename(request->payload, dir_path, request->length);
     FILE *f = fopen(filename, "r");
     if (!f) {
@@ -176,13 +176,13 @@ uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_
     } else {
         compress_response(dict, &response, payload, &length, 0x5);
     }
-    send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+    send(connect_fd, response, sizeof(uint8_t) * length, 0);
     free(payload);
     free(response);
     return SUCCESS;
 }
 
-uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_path, struct linked_list *queue,
+uint8_t retrieve_handler(int connect_fd, struct dict *dict, char *dir_path, struct linked_list *queue,
                          const message *request) {
     uint8_t *response;
     uint64_t length;
@@ -205,7 +205,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     if (signal == NON_EXIST) {
         add_node(queue, node);
     } else if (signal == EXIST) {
-        send_empty_retrieve(data->connect_fd);
+        send_empty_retrieve(connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
         free(filename);
         free(request_payload);
@@ -213,7 +213,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         free(node);
         return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYING) {
-        send_error(data->connect_fd);
+        send_error(connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
         free(filename);
         free(request_payload);
@@ -231,7 +231,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     free(filename);
     size_t sz;
     if (!f || (starting + len_data) > (sz = file_size(f))) {
-        send_error(data->connect_fd);
+        send_error(connect_fd);
         free(request_payload);
         return ERROR_OCCUR;
     }
@@ -257,7 +257,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         compress_response(dict, &response, uncompressed_payload, &length, 0x7);
     }
     node->querying = 0;
-    send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+    send(connect_fd, response, sizeof(uint8_t) * length, 0);
     free(request_payload);
     free(uncompressed_payload);
     free(response);
