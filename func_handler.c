@@ -3,13 +3,18 @@
 
 #include "func_handler.h"
 
+/**
+ * Convert an uint64_t to a list of uint8_t
+ * @param dest stores the result
+ * @param src  uint64_t to be converted
+ */
 void uint64_to_uint8(uint8_t *dest, uint64_t src) {
     // Convert the length of uint64_t to uint8_t[8] and copy to the response
     memcpy(dest, &src, sizeof(uint64_t));
 }
 
 /**
- *
+ * Convert the struct message to a list of uint8_t
  * @param msg Source to be converted
  * @param response The list of uint8_t where stores the converted message
  */
@@ -18,7 +23,6 @@ void msg_to_response(const message *msg, uint8_t *response) {
     // Convert the header to one byte of uint8_t
     response[0] = make_header(header->type, header->compressed, header->req_compress);
     uint64_to_uint8(response + 1, htobe64(msg->length));
-//    payload_len_to_uint8(msg->length, response);
 
     // Copy the payload
     for (int i = 0; i < msg->length; i++) {
@@ -26,15 +30,29 @@ void msg_to_response(const message *msg, uint8_t *response) {
     }
 }
 
-char *concatenate_filename(uint8_t *payload, char *dir_path, uint64_t length) {
+/**
+ * Concatenate the filename with the directory path
+ * @param file The original filename
+ * @param dir_path The directory to be concatenated
+ * @param length the length of the original filename
+ * @return The concatenated filename
+ */
+char *concatenate_filename(uint8_t *file, char *dir_path, uint64_t length) {
     char *filename = malloc(sizeof(char) * (strlen(dir_path) + length + 2));
     filename[strlen(dir_path) + length + 1] = '\0';
     memcpy(filename, dir_path, strlen(dir_path));
     filename[strlen(dir_path)] = '/';
-    memcpy(filename + strlen(dir_path) + 1, payload, length);
+    memcpy(filename + strlen(dir_path) + 1, file, length);
     return filename;
 }
 
+/**
+ * Get the retrieve query information
+ * @param request_payload The request payload
+ * @param id (Out param) Session ID
+ * @param starting (Out param) The starting offset
+ * @param len_data (Out param) The length of dada field
+ */
 void retrieve_get_info(const uint8_t *request_payload, uint32_t *id, uint64_t *starting, uint64_t *len_data) {
     //  get the session id
     memcpy(id, request_payload, 4);
@@ -50,8 +68,8 @@ void retrieve_get_info(const uint8_t *request_payload, uint32_t *id, uint64_t *s
 }
 
 /**
- *
- * @param connect_fd connection file description
+ * Send an error message to the client
+ * @param connect_fd Connection File Description
  */
 void send_error(int connect_fd) {
     uint8_t error_header = make_header(0xf, 0, 0);
@@ -61,6 +79,10 @@ void send_error(int connect_fd) {
     close(connect_fd);
 }
 
+/**
+ * Send an empty retrieve to the client
+ * @param connect_fd Connection File Description
+ */
 void send_empty_retrieve(int connect_fd) {
     uint8_t header = make_header(0x7, 0, 0);
     uint64_t payload = 0x0;
@@ -69,6 +91,13 @@ void send_empty_retrieve(int connect_fd) {
     close(connect_fd);
 }
 
+/**
+ * Make a response of payload without compression
+ * @param response (Out param) Store the response
+ * @param payload The original payload
+ * @param length The length of payload
+ * @param type The type of response
+ */
 void uncompressed_response(uint8_t **response, const uint8_t *payload, uint64_t *length,
                            uint8_t type) {
     // if compression not required
@@ -81,6 +110,15 @@ void uncompressed_response(uint8_t **response, const uint8_t *payload, uint64_t 
     (*length) += HEADER_LENGTH;
 }
 
+
+/**
+ * Make a response of payload with compression
+ * @param dict The code dictionary
+ * @param response (Out param) Store the response
+ * @param payload The original payload
+ * @param length The length of payload
+ * @param type The type of response
+ */
 void compress_response(struct dict *dict, uint8_t **response, const uint8_t *payload, uint64_t *length, uint8_t type) {
     uint64_t compressed_length = get_code_length(dict, payload, *length);
     compressed_length = upper_divide(compressed_length, 8) + 1;
@@ -97,17 +135,32 @@ void compress_response(struct dict *dict, uint8_t **response, const uint8_t *pay
     free(compressed);
 }
 
+/**
+ * Check to decompress a payload
+ * @param dict The code dictionary
+ * @param request The request
+ * @param request_payload The payload
+ * @param length The length of payload
+ */
 void decompress_payload(struct dict *dict, const message *request, uint8_t **request_payload, uint64_t *length) {
     if (request->header->compressed == (unsigned) 0) {
+        // If the payload does not need compression
         (*length) = request->length;
         (*request_payload) = malloc(sizeof(uint8_t) * *length);
         memcpy(*request_payload, request->payload, *length);
 
     } else {
+        // If the payload need compression
         (*request_payload) = decompress(dict, request->payload, request->length, length);
     }
 }
 
+/**
+ * Handle the echo functionality
+ * @param data The data stores the connect fd
+ * @param dict The code dictionary
+ * @param request The request
+ */
 void echo_handler(const struct data *data, struct dict *dict, const message *request) {
     uint8_t *response;
     uint64_t length = request->length;
@@ -126,6 +179,13 @@ void echo_handler(const struct data *data, struct dict *dict, const message *req
     free(response);
 }
 
+/**
+ * Handle directory list functionality
+ * @param data The data stores the connect fd
+ * @param dict The code dictionary
+ * @param dir_path The directory path
+ * @param request The request
+ */
 void directory_list_handler(const struct data *data, struct dict *dict, char *dir_path, const message *request) {
     uint8_t *response;
     uint64_t length;
@@ -143,8 +203,10 @@ void directory_list_handler(const struct data *data, struct dict *dict, char *di
     }
 
     if (request->header->req_compress == (unsigned) 0) {
+        // If it needs compression
         uncompressed_response(&response, payload, &length, 0x3);
     } else {
+        // If it does not need compression
         compress_response(dict, &response, payload, &length, 0x3);
     }
 
@@ -154,7 +216,14 @@ void directory_list_handler(const struct data *data, struct dict *dict, char *di
     free(payload);
 }
 
-
+/**
+ * Handle the file size functionality
+ * @param data The data stores the connect fd
+ * @param dict The code dictionary
+ * @param dir_path The directory path
+ * @param request The request
+ * @return The signal if this function runs well
+ */
 uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_path, const message *request) {
     uint64_t length;
     uint8_t *request_payload;
@@ -177,8 +246,10 @@ uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_
 
     uint8_t *response;
     if (request->header->req_compress == (unsigned) 0) {
+        // If it needs compression
         uncompressed_response(&response, uncompressed_payload, &length, 0x5);
     } else {
+        // If it does not need compression
         compress_response(dict, &response, uncompressed_payload, &length, 0x5);
     }
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
@@ -187,6 +258,15 @@ uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_
     return SUCCESS;
 }
 
+/**
+ * Handle t he retrieve file functionality
+ * @param data The data stores the connect fd
+ * @param dict The code dictionary
+ * @param dir_path The directory path
+ * @param queue The request queue
+ * @param request The request
+ * @return The signal if this function runs well
+ */
 uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_path, struct linked_list *queue,
                          const message *request) {
     // Check to decompress the payload
@@ -208,8 +288,10 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     pthread_mutex_lock(&(queue->mutex));
     uint8_t signal = list_contains(queue, node);
     if (signal == NON_EXIST) {
+        // If the request does not exist, add to the queue and respond to it
         add_node(queue, node);
     } else if (signal == EXIST) {
+        // If the request exists, send an empty response
         send_empty_retrieve(data->connect_fd);
         free(filename);
         free(request_payload);
@@ -218,6 +300,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         pthread_mutex_unlock(&(queue->mutex));
         return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYING) {
+        // If the request with same session id is querying, send an error response
         send_error(data->connect_fd);
         free(filename);
         free(request_payload);
@@ -226,6 +309,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         pthread_mutex_unlock(&(queue->mutex));
         return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYED) {
+        // If the request with same session id is queried, add to the queue and respond to it
         free(node->filename);
         free(node);
     }
@@ -237,6 +321,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     free(filename);
     size_t sz;
     if (!f || (starting + len_data) > (sz = file_size(f))) {
+        // If the file cannot be opened or the range is bad
         send_error(data->connect_fd);
         free(request_payload);
         return ERROR_OCCUR;
@@ -258,8 +343,10 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     // make the response
     uint8_t *response;
     if (request->header->req_compress == (unsigned) 0) {
+        // If it does not need compression
         uncompressed_response(&response, uncompressed_payload, &length, 0x7);
     } else {
+        // If it does not need compression
         compress_response(dict, &response, uncompressed_payload, &length, 0x7);
     }
     node->querying = 0;
