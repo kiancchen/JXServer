@@ -162,10 +162,10 @@ void *connection_handler(void *arg) {
 
         } else if (type == (unsigned) 0x8) {
 //            uint64_t length = be64toh(request->length);
-            if (request->length != 0) {
-                send_error(data->connect_fd);
-                break;
-            }
+//            if (request->length != 0) {
+//                send_error(data->connect_fd);
+//                break;
+//            }
 
 
             free(request->header);
