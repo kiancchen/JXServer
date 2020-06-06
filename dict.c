@@ -182,7 +182,7 @@ uint8_t *compress(struct dict *dict, const uint8_t *payloads, uint64_t payload_l
  * @param dict Where stores the codes
  * @param compressed The compressed payload needed to be decompressed
  * @param compressed_length The length of compressed payload
- * @param num_decompressed (Out para) The length of decompressed payloads
+ * @param num_decompressed (Out param) The length of decompressed payloads
  * @return The decompressed payloads
  */
 uint8_t *decompress(struct dict *dict, uint8_t *compressed, const uint64_t compressed_length, uint64_t *num_decompressed) {
