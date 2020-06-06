@@ -116,11 +116,13 @@ void *connection_handler(void *arg) {
         if (error == CON_CLS) {
             // Connection is closed
             close(connect_fd);
+            free_request(request);
             break;
         }
         if (error == INVALID_MSG) {
             // Error occurs
             send_error(connect_fd);
+            free_request(request);
             break;
         }
 
@@ -129,6 +131,7 @@ void *connection_handler(void *arg) {
             // Echo Functionality
             if (error == LEN_ZERO) {
                 send_error(connect_fd);
+                free_request(request);
                 break;
             }
             echo_handler(connect_fd, &dict, request);
@@ -137,6 +140,7 @@ void *connection_handler(void *arg) {
             // Directory list Functionality
             if (error != LEN_ZERO) {
                 send_error(connect_fd);
+                free_request(request);
                 break;
             }
             directory_list_handler(connect_fd, &dict, dir_path, request);
@@ -145,17 +149,20 @@ void *connection_handler(void *arg) {
             // File size query Functionality
             if (error == LEN_ZERO) {
                 send_error(connect_fd);
+                free_request(request);
                 break;
             }
             if (file_size_handler(connect_fd, &dict, dir_path, request) == ERROR_OCCUR) {
                 // Error occurs
                 send_error(connect_fd);
+                free_request(request);
                 break;
             }
 
         } else if (type == (unsigned) 0x6) {
             if (retrieve_handler(connect_fd, &dict, dir_path, &queue, request) == ERROR_OCCUR) {
                 // Error occurs
+                free_request(request);
                 break;
             }
 
@@ -177,6 +184,7 @@ void *connection_handler(void *arg) {
 
         } else {
             send_error(connect_fd);
+            free_request(request);
             break;
         }
     }
