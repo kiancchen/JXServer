@@ -141,8 +141,8 @@ void *connection_handler(void *arg) {
                 break;
             }
             echo_handler(data, &dict, request);
-            free_request(request);
 
+            free_request(request);
         } else if (type == (unsigned) 0x2) {
             // Directory list Functionality
             if (error != LEN_ZERO) {
@@ -180,10 +180,6 @@ void *connection_handler(void *arg) {
             send_error(data->connect_fd);
             break;
         }
-        // Clean up
-        free(request->header);
-        free(request->payload);
-        free(request);
     }
     // Clean up
     free(data);
