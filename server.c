@@ -161,8 +161,24 @@ void *connection_handler(void *arg) {
             }
 
         } else if (type == (unsigned) 0x8) {
+            uint64_t length = be64toh(request->length);
+            if (length != 0) {
+                send_error(data->connect_fd);
+                break;
+            }
+
+
+            free(request->header);
+            free(request->payload);
+            free(request);
+            close(data->listen_fd);
+            free(data);
+            destroy_linked_list(&queue);
+            pthread_mutex_destroy(&(queue.mutex));
+            free(dir_path);
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
+            exit(0);
             break;
 
         } else {
@@ -170,12 +186,10 @@ void *connection_handler(void *arg) {
             break;
         }
         // Clean up
-        free(request->header);
-        free(request->payload);
-        free(request);
+
     }
     // Clean up
-    free(data);
+
     return NULL;
 }
 
@@ -220,7 +234,6 @@ int main(int argc, char **argv) {
         perror("listen_listenfd error");
         exit(EXIT_FAILURE);
     }
-
     while (1) {
         // Accept the connection request from the client
         // It will block until there is any connection
@@ -234,13 +247,10 @@ int main(int argc, char **argv) {
         // data stores the connect_fd and request
         struct data *data = malloc(sizeof(struct data));
         data->connect_fd = connect_fd;
+        data->listen_fd = listenfd;
         // Create a thread for every new connect to process the request
         pthread_t thread;
         pthread_create(&thread, NULL, connection_handler, data);
     }
-    destroy_linked_list(&queue);
-    pthread_mutex_destroy(&(queue.mutex));
-    free(dir_path);
-    close(listenfd);
     return 0;
 }

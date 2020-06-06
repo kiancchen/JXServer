@@ -42,6 +42,7 @@ typedef struct {
 
 struct data {
     int connect_fd;
+    int listen_fd;
     message *msg;
 };
 
