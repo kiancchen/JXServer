@@ -22,7 +22,7 @@
 #define INVALID_MSG (1)
 #define SUCCESS (2)
 #define LEN_ZERO (3)
-#define make_header(type, com, req) (type << 4 | com << 3 | req << 2)
+#define make_header(type, com, req) (type << 4u | com << 3u | req << 2u)
 #define HEADER_LENGTH (9)
 #define RETRIEVE_INFO_LEN (20)
 
@@ -48,7 +48,7 @@ void uint64_to_uint8(uint8_t *dest, uint64_t src);
 
 void msg_to_response(const message *msg, uint8_t *response);
 
-char *concatenate_filename(uint8_t *payload, uint64_t length);
+char *concatenate_filename(uint8_t *payload, char *dir_path, uint64_t length);
 
 void retrieve_get_info(const uint8_t *request_payload, uint32_t *id, uint64_t *starting, uint64_t *len_data);
 
@@ -58,7 +58,7 @@ void send_empty_retrieve(int connect_fd);
 
 void uncompressed_response(uint8_t **response, const uint8_t *payload, uint64_t *length, uint8_t type);
 
-void compress_response(uint8_t **response, const uint8_t *payload, uint64_t *length, uint8_t type);
+void compress_response(struct dict *dict, uint8_t **response, const uint8_t *payload, uint64_t *length, uint8_t type);
 
 void decompress_payload(const message *request, uint8_t **request_payload, uint64_t *length);
 

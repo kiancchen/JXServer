@@ -111,7 +111,7 @@ void echo_handler(const struct data *data, const message *request) {
         // Modify the header
         response[0] = make_header(0x1, request->header->compressed, 0);
     } else {
-        compress_response(&response, request->payload, &length, 0x1);
+        compress_response(&dict, &response, request->payload, &length, 0x1);
     }
     // Send the response
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
@@ -137,7 +137,7 @@ void directory_list_handler(const struct data *data, const message *request) {
     if (request->header->req_compress == 0) {
         uncompressed_response(&response, payload, &length, 0x3);
     } else {
-        compress_response(&response, payload, &length, 0x3);
+        compress_response(&dict, &response, payload, &length, 0x3);
     }
 
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
@@ -158,7 +158,7 @@ void file_size_handler(const struct data *data, const message *request, size_t s
     if (request->header->req_compress == 0) {
         uncompressed_response(&response, payload, &length, 0x5);
     } else {
-        compress_response(&response, payload, &length, 0x5);
+        compress_response(&dict, &response, payload, &length, 0x5);
     }
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
     free(payload);
@@ -215,7 +215,7 @@ void *connection_handler(void *arg) {
                 break;
             }
 
-            char *filename = concatenate_filename(request->payload, request->length);
+            char *filename = concatenate_filename(request->payload, dir_path, request->length);
             FILE *f = fopen(filename, "r");
             if (!f) {
                 send_error(data->connect_fd);
@@ -239,7 +239,7 @@ void *connection_handler(void *arg) {
 
             // Concatenate the filename
             uint64_t len_filename = length - RETRIEVE_INFO_LEN;
-            char *filename = concatenate_filename(request_payload + RETRIEVE_INFO_LEN, len_filename);
+            char *filename = concatenate_filename(request_payload + RETRIEVE_INFO_LEN, dir_path, len_filename);
 
             // process request queue
             struct node *node = new_node(filename, id, starting, len_data);
@@ -287,7 +287,7 @@ void *connection_handler(void *arg) {
             if (request->header->req_compress == (unsigned) 0) {
                 uncompressed_response(&response, uncompressed_payload, &length, 0x7);
             } else {
-                compress_response(&response, uncompressed_payload, &length, 0x7);
+                compress_response(&dict, &response, uncompressed_payload, &length, 0x7);
             }
 
             node->querying = 0;
