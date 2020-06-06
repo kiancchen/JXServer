@@ -246,6 +246,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     }
     node->querying = 0;
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+    free(uncompressed_payload);
     free(response);
     return SUCCESS;
 }
