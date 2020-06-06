@@ -42,7 +42,6 @@ typedef struct {
 
 struct data {
     int connect_fd;
-    message *msg;
 };
 
 void uint64_to_uint8(uint8_t *dest, uint64_t src);
