@@ -183,7 +183,6 @@ void *connection_handler(void *arg) {
             pthread_mutex_destroy(&(queue.mutex));
             free(dir_path);
             exit(0);
-            break;
 
         } else {
             send_error(connect_fd);
