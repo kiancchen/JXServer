@@ -1,6 +1,13 @@
 #include "func_handler.h"
 
-
+/**
+ * Create the node storing the information of retrieve
+ * @param filename filename
+ * @param id session id
+ * @param starting starting offset
+ * @param length request length
+ * @return the created node
+ */
 struct node *new_node(char *filename, uint32_t id, uint64_t starting, uint64_t length) {
     struct node *node = malloc(sizeof(struct node));
     node->filename = malloc(sizeof(char) * (strlen(filename) + 1));
@@ -14,6 +21,12 @@ struct node *new_node(char *filename, uint32_t id, uint64_t starting, uint64_t l
     return node;
 }
 
+/**
+ * Check if the linked list contains the specific node
+ * @param linked_list The linked list to be searched
+ * @param node The node to be looked for
+ * @return The existing status of the ndoe
+ */
 uint8_t list_contains(struct linked_list *linked_list, struct node *node) {
     struct node *cur = linked_list->head;
     while (cur != NULL) {
@@ -37,6 +50,11 @@ uint8_t list_contains(struct linked_list *linked_list, struct node *node) {
     return NON_EXIST;
 }
 
+/**
+ * Add the node to the linked list
+ * @param linked_list The linked list to be added into
+ * @param node The node to be added
+ */
 void add_node(struct linked_list* linked_list, struct node *node){
     struct node *cur = linked_list->head;
     if (cur == NULL){
@@ -50,6 +68,10 @@ void add_node(struct linked_list* linked_list, struct node *node){
     cur->next = node;
 }
 
+/**
+ * Free all memory used by a linked list
+ * @param linked_list The list to be freed
+ */
 void destroy_linked_list(struct linked_list* linked_list){
     struct node *cur = linked_list->head;
 
