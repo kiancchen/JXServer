@@ -189,14 +189,13 @@ void *connection_handler(void *arg) {
                 free_request(request);
                 break;
             }
-
-            destroy_linked_list(&queue);
-            pthread_mutex_destroy(&(queue.mutex));
-            free(dir_path);
-            free_request(request);
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
+            free(dir_path);
+            free_request(request);
             free(data);
+            destroy_linked_list(&queue);
+            pthread_mutex_destroy(&(queue.mutex));
             exit(0);
         } else {
             send_error(data->connect_fd);
