@@ -371,6 +371,7 @@ void *connection_handler(void *arg) {
             uint8_t *file_data = malloc(sizeof(uint8_t) * len_data);
             memcpy(file_data, buffer + starting, len_data);
             // Concatenate the payloads
+            length = len_data + RETRIEVE_INFO_LEN;
             uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
             memcpy(uncompressed_payload, request_payload, 20);
             memcpy(uncompressed_payload + 20, file_data, len_data);
@@ -378,7 +379,6 @@ void *connection_handler(void *arg) {
             uint8_t *response;
 
             if (request->header->req_compress == (unsigned) 0) {
-                length = len_data + RETRIEVE_INFO_LEN;
                 uncompressed_response(&response, uncompressed_payload, &length, 0x7);
 //                // make the response
 //                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
@@ -392,7 +392,6 @@ void *connection_handler(void *arg) {
 //
 //                length += HEADER_LENGTH;
             } else {
-                length = 20 + len_data;
                 compress_response(&response, uncompressed_payload, &length, 0x7);
             }
 
