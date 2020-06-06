@@ -6,7 +6,7 @@ struct linked_list queue;
 
 void uncompressed_response(uint8_t **response, const uint8_t *payload, uint64_t *length, uint8_t type);
 
-void retrieve_get_info(const uint8_t *request_payload, uint32_t *id, uint64_t *starting);
+void retrieve_get_info(const uint8_t *request_payload, uint32_t *id, uint64_t *starting, uint64_t *len_data);
 
 char *concatenate_filename(uint8_t *payload, uint64_t length) {
     char *filename = malloc(sizeof(char) * (strlen(dir_path) + length + 2));
@@ -321,12 +321,11 @@ void *connection_handler(void *arg) {
             // get the information from the file_data: session id; starting offset; data length;
             uint32_t id;
             uint64_t starting;
-            retrieve_get_info(request_payload, &id, &starting);
+            uint64_t len_data;
+            retrieve_get_info(request_payload, &id, &starting, &len_data);
 
             // get the length of data required
-            uint64_t len_data;
-            memcpy(&len_data, request_payload + 12, 8);
-            len_data = htobe64(len_data);
+
 
             // Concatenate the filename
             uint64_t len_filename = length - RETRIEVE_INFO_LEN;
@@ -405,13 +404,16 @@ void *connection_handler(void *arg) {
     return NULL;
 }
 
-void retrieve_get_info(const uint8_t *request_payload, uint32_t *id, uint64_t *starting) {
+void retrieve_get_info(const uint8_t *request_payload, uint32_t *id, uint64_t *starting, uint64_t *len_data) {
     memcpy(id, request_payload, 4);
     (*id) = htobe32((*id));
 
     // get the starting offset
     memcpy(starting, request_payload + 4, 8);
     (*starting) = htobe64((*starting));
+
+    memcpy(len_data, request_payload + 12, 8);
+    *len_data = htobe64(*len_data);
 }
 
 int main(int argc, char **argv) {
