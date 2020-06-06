@@ -250,6 +250,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     memcpy(uncompressed_payload + 20, file_data, len_data);
     free(file_data);
     // make the response
+
     if (request->header->req_compress == (unsigned) 0) {
         uncompressed_response(&response, uncompressed_payload, &length, 0x7);
     } else {
