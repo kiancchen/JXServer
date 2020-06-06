@@ -105,23 +105,22 @@ char *read_config(const char *filename, struct in_addr *inaddr, uint16_t *port) 
  * @return NULL
  */
 void *connection_handler(void *arg) {
-    struct data *data = arg;
+    int connect_fd = (int) arg;
 
     while (1) {
         message *request = malloc(sizeof(message));
-        data->msg = request;
 
         // Read the header, payload length and payload
-        uint8_t error = read_request(data->connect_fd, request);
+        uint8_t error = read_request(connect_fd, request);
 
         if (error == CON_CLS) {
             // Connection is closed
-            close(data->connect_fd);
+            close(connect_fd);
             break;
         }
         if (error == INVALID_MSG) {
             // Error occurs
-            send_error(data->connect_fd);
+            send_error(connect_fd);
             break;
         }
 
@@ -129,33 +128,33 @@ void *connection_handler(void *arg) {
         if (type == (unsigned) 0x0) {
             // Echo Functionality
             if (error == LEN_ZERO) {
-                send_error(data->connect_fd);
+                send_error(connect_fd);
                 break;
             }
-            echo_handler(data, &dict, request);
+            echo_handler(connect_fd, &dict, request);
 
         } else if (type == (unsigned) 0x2) {
             // Directory list Functionality
             if (error != LEN_ZERO) {
-                send_error(data->connect_fd);
+                send_error(connect_fd);
                 break;
             }
-            directory_list_handler(data, &dict, dir_path, request);
+            directory_list_handler(connect_fd, &dict, dir_path, request);
 
         } else if (type == (unsigned) 0x4) {
             // File size query Functionality
             if (error == LEN_ZERO) {
-                send_error(data->connect_fd);
+                send_error(connect_fd);
                 break;
             }
-            if (file_size_handler(data, &dict, dir_path, request) == ERROR_OCCUR) {
+            if (file_size_handler(connect_fd, &dict, dir_path, request) == ERROR_OCCUR) {
                 // Error occurs
-                send_error(data->connect_fd);
+                send_error(connect_fd);
                 break;
             }
 
         } else if (type == (unsigned) 0x6) {
-            if (retrieve_handler(data, &dict, dir_path, &queue, request) == ERROR_OCCUR) {
+            if (retrieve_handler(connect_fd, &dict, dir_path, &queue, request) == ERROR_OCCUR) {
                 // Error occurs
                 break;
             }
@@ -166,8 +165,8 @@ void *connection_handler(void *arg) {
 //                send_error(data->connect_fd);
 //                break;
 //            }
-            shutdown(data->connect_fd, SHUT_RDWR);
-            close(data->connect_fd);
+            shutdown(connect_fd, SHUT_RDWR);
+            close(connect_fd);
             free(request->header);
             free(request->payload);
             free(request);
@@ -177,7 +176,7 @@ void *connection_handler(void *arg) {
             exit(0);
 
         } else {
-            send_error(data->connect_fd);
+            send_error(connect_fd);
             break;
         }
         // Clean up
@@ -240,12 +239,11 @@ int main(int argc, char **argv) {
         }
 
         // data stores the connect_fd and request
-        struct data *data = malloc(sizeof(struct data));
-        data->connect_fd = connect_fd;
-        data->listen_fd = listenfd;
+//        struct data *data = malloc(sizeof(struct data));
+//        data->connect_fd = connect_fd;
         // Create a thread for every new connect to process the request
         pthread_t thread;
-        pthread_create(&thread, NULL, connection_handler, data);
+        pthread_create(&thread, NULL, connection_handler, &connect_fd);
     }
     close(listenfd);
     return 0;

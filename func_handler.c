@@ -106,7 +106,7 @@ void decompress_payload(struct dict *dict, const message *request, uint8_t **req
     }
 }
 
-void echo_handler(struct data *data, struct dict *dict, message *request) {
+void echo_handler(int connect_fd, struct dict *dict, message *request) {
     uint8_t *response;
     uint64_t length = request->length;
     if (request->header->compressed != (unsigned) 0 || request->header->req_compress != (unsigned) 1) {
@@ -120,13 +120,12 @@ void echo_handler(struct data *data, struct dict *dict, message *request) {
         compress_response(dict, &response, request->payload, &length, 0x1);
     }
     // Send the response
-    send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+    send(connect_fd, response, sizeof(uint8_t) * length, 0);
     free(response);
     free_request(request);
-    free(data);
 }
 
-void directory_list_handler(struct data *data, struct dict *dict, char *dir_path, message *request) {
+void directory_list_handler(int connect_fd, struct dict *dict, char *dir_path, message *request) {
     uint8_t *response;
     uint64_t length;
     // get the list of files
@@ -148,16 +147,15 @@ void directory_list_handler(struct data *data, struct dict *dict, char *dir_path
         compress_response(dict, &response, payload, &length, 0x3);
     }
 
-    send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+    send(connect_fd, response, sizeof(uint8_t) * length, 0);
     free(response);
     free(file_list);
     free(payload);
     free_request(request);
-    free(data);
 }
 
 
-uint8_t file_size_handler(struct data *data, struct dict *dict, char *dir_path, message *request) {
+uint8_t file_size_handler(int connect_fd, struct dict *dict, char *dir_path, message *request) {
     char *filename = concatenate_filename(request->payload, dir_path, request->length);
     FILE *f = fopen(filename, "r");
     if (!f) {
@@ -178,15 +176,14 @@ uint8_t file_size_handler(struct data *data, struct dict *dict, char *dir_path, 
     } else {
         compress_response(dict, &response, payload, &length, 0x5);
     }
-    send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+    send(connect_fd, response, sizeof(uint8_t) * length, 0);
     free(payload);
     free(response);
     free_request(request);
-    free(data);
     return SUCCESS;
 }
 
-uint8_t retrieve_handler(struct data *data, struct dict *dict, char *dir_path, struct linked_list *queue,
+uint8_t retrieve_handler(int connect_fd, struct dict *dict, char *dir_path, struct linked_list *queue,
                          message *request) {
     uint8_t *response;
     uint64_t length;
@@ -209,11 +206,11 @@ uint8_t retrieve_handler(struct data *data, struct dict *dict, char *dir_path, s
     if (signal == NON_EXIST) {
         add_node(queue, node);
     } else if (signal == EXIST) {
-        send_empty_retrieve(data->connect_fd);
+        send_empty_retrieve(connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
         return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYING) {
-        send_error(data->connect_fd);
+        send_error(connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
         return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYED) {
@@ -227,7 +224,7 @@ uint8_t retrieve_handler(struct data *data, struct dict *dict, char *dir_path, s
     free(filename);
     size_t sz;
     if (!f || (starting + len_data) > (sz = file_size(f))) {
-        send_error(data->connect_fd);
+        send_error(connect_fd);
         return ERROR_OCCUR;
     }
     char *buffer = malloc(sizeof(char) * sz);
@@ -251,14 +248,13 @@ uint8_t retrieve_handler(struct data *data, struct dict *dict, char *dir_path, s
         compress_response(dict, &response, uncompressed_payload, &length, 0x7);
     }
     node->querying = 0;
-    send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+    send(connect_fd, response, sizeof(uint8_t) * length, 0);
     free(response);
     free_request(request);
-    free(data);
     return SUCCESS;
 }
 
-void free_request(message *request){
+void free_request(message *request) {
     free(request->header);
     free(request->payload);
     free(request);
