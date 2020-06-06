@@ -171,7 +171,6 @@ void *connection_handler(void *arg) {
             free(request->header);
             free(request->payload);
             free(request);
-            close(data->listen_fd);
             free(data);
             destroy_linked_list(&queue);
             pthread_mutex_destroy(&(queue.mutex));
@@ -249,5 +248,6 @@ int main(int argc, char **argv) {
         pthread_t thread;
         pthread_create(&thread, NULL, connection_handler, data);
     }
+    close(listenfd);
     return 0;
 }
