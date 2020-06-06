@@ -5,7 +5,15 @@ char *dir_path;
 struct linked_list queue;
 
 
-void *shutdown_handler(int connect_fd, message *request);
+void shutdown_handler(int connect_fd, message *request) {
+    shutdown(connect_fd, SHUT_RDWR);
+    close(connect_fd);
+    free_request(request);
+    destroy_linked_list(&queue);
+    pthread_mutex_destroy(&(queue.mutex));
+    free(dir_path);
+
+}
 
 /**
  * Read the request from the client.
@@ -188,15 +196,7 @@ void *connection_handler(void *arg) {
     return NULL;
 }
 
-void *shutdown_handler(int connect_fd, message *request) {
-    shutdown(connect_fd, SHUT_RDWR);
-    close(connect_fd);
-    free_request(request);
-    destroy_linked_list(&queue);
-    pthread_mutex_destroy(&(queue.mutex));
-    free(dir_path);
 
-}
 
 
 int main(int argc, char **argv) {
