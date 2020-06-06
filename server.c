@@ -100,136 +100,7 @@ char *read_config(const char *filename, struct in_addr *inaddr, uint16_t *port) 
 }
 
 
-void echo_handler(const struct data *data, const message *request) {
-    uint8_t *response;
-    uint64_t length = request->length;
-    if (request->header->compressed != (unsigned) 0 || request->header->req_compress != (unsigned) 1) {
-        length += HEADER_LENGTH;
-        response = malloc(sizeof(uint8_t) * length);
-        // Copy the request
-        msg_to_response(request, response);
-        // Modify the header
-        response[0] = make_header(0x1, request->header->compressed, 0);
-    } else {
-        compress_response(&dict, &response, request->payload, &length, 0x1);
-    }
-    // Send the response
-    send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
-    free(response);
-}
 
-void directory_list_handler(const struct data *data, const message *request) {
-    uint8_t *response;
-    uint64_t length;
-    // get the list of files
-    char *file_list = get_file_list(dir_path, &length);
-
-    uint8_t *payload;
-    if (length == 0) {
-        payload = 0x00;
-        length = 1;
-    } else {
-        // convert char* file_list to uint8_t
-        payload = malloc(sizeof(uint8_t) * length);
-        memcpy(payload, file_list, length);
-    }
-
-    if (request->header->req_compress == 0) {
-        uncompressed_response(&response, payload, &length, 0x3);
-    } else {
-        compress_response(&dict, &response, payload, &length, 0x3);
-    }
-
-    send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
-    free(response);
-    free(file_list);
-    free(payload);
-}
-
-
-void file_size_handler(const struct data *data, const message *request, size_t sz) {
-    // convert to network byte order
-    uint64_t length = 8;
-    uint64_t size_64 = htobe64(sz);
-    uint8_t *payload = malloc(sizeof(uint8_t) * length);
-    uint64_to_uint8(payload, size_64);
-
-    uint8_t *response;
-    if (request->header->req_compress == 0) {
-        uncompressed_response(&response, payload, &length, 0x5);
-    } else {
-        compress_response(&dict, &response, payload, &length, 0x5);
-    }
-    send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
-    free(payload);
-    free(response);
-}
-
-uint8_t retrieve_handler(const struct data *data, const message *request, uint8_t **response, uint64_t *length) {
-    uint8_t *request_payload;
-    decompress_payload(&dict, request, &request_payload, length);
-    // get the information from the file_data: session id; starting offset; data length;
-    uint32_t id;
-    uint64_t starting;
-    uint64_t len_data;
-    retrieve_get_info(request_payload, &id, &starting, &len_data);
-
-    // Concatenate the filename
-    uint64_t len_filename = *length - RETRIEVE_INFO_LEN;
-    char *filename = concatenate_filename(request_payload + RETRIEVE_INFO_LEN, dir_path, len_filename);
-
-    // process request queue
-    struct node *node = new_node(filename, id, starting, len_data);
-    pthread_mutex_lock(&(queue.mutex));
-    uint8_t signal = list_contains(&queue, node);
-    if (signal == NON_EXIST) {
-        add_node(&queue, node);
-    } else if (signal == EXIST) {
-        send_empty_retrieve(data->connect_fd);
-        pthread_mutex_unlock(&(queue.mutex));
-        return 0;
-    } else if (signal == SAME_ID_DIFF_OTHER_QUERYING) {
-        send_error(data->connect_fd);
-        pthread_mutex_unlock(&(queue.mutex));
-        return 0;
-    } else if (signal == SAME_ID_DIFF_OTHER_QUERYED) {
-        add_node(&queue, node);
-    }
-    pthread_mutex_unlock(&(queue.mutex));
-    // end of queue process
-
-    // open and read the file
-    FILE *f = fopen(filename, "r");
-    free(filename);
-    size_t sz;
-    if (!f || (starting + len_data) > (sz = file_size(f))) {
-        send_error(data->connect_fd);
-        return 0;
-    }
-    char *buffer = malloc(sizeof(char) * sz);
-    fread(buffer, sizeof(char), sz, f);
-    fclose(f);
-
-    //make the file_data
-    uint8_t *file_data = malloc(sizeof(uint8_t) * len_data);
-    memcpy(file_data, buffer + starting, len_data);
-    free(buffer);
-    // Concatenate the payloads
-    *length = len_data + RETRIEVE_INFO_LEN;
-    uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * *length);
-    memcpy(uncompressed_payload, request_payload, 20);
-    memcpy(uncompressed_payload + 20, file_data, len_data);
-    free(file_data);
-    // make the response
-
-    if (request->header->req_compress == (unsigned) 0) {
-        uncompressed_response(response, uncompressed_payload, length, 0x7);
-    } else {
-        compress_response(&dict, response, uncompressed_payload, length, 0x7);
-    }
-    node->querying = 0;
-    return 1;
-}
 
 /**
  *
@@ -264,7 +135,7 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
-            echo_handler(data, request);
+            echo_handler(data, request, &dict);
 
         } else if (type == (unsigned) 0x2) {
             // Directory list Functionality
@@ -272,7 +143,7 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
-            directory_list_handler(data, request);
+            directory_list_handler(data, request, &dict, dir_path);
 
         } else if (type == (unsigned) 0x4) {
             // File size query Functionality
@@ -291,12 +162,12 @@ void *connection_handler(void *arg) {
             fclose(f);
             free(filename);
 
-            file_size_handler(data, request, sz);
+            file_size_handler(data, request, sz, &dict);
 
         } else if (type == (unsigned) 0x6) {
             uint8_t *response;
             uint64_t length;
-            if (retrieve_handler(data, request, &response, &length) == 0){
+            if (retrieve_handler(data, request, &response, &length, &dict, dir_path, &queue) == 0){
                 break;
             }
             send(data->connect_fd, response, sizeof(uint8_t) * length, 0);

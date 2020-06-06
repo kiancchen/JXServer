@@ -62,4 +62,13 @@ void compress_response(struct dict *dict, uint8_t **response, const uint8_t *pay
 
 void decompress_payload(struct dict *dict, const message *request, uint8_t **request_payload, uint64_t *length);
 
+void echo_handler(const struct data *data, const message *request, struct dict *dict);
+
+void directory_list_handler(const struct data *data, const message *request, struct dict *dict, char *dir_path);
+
+void file_size_handler(const struct data *data, const message *request, size_t sz, struct dict *dict);
+
+uint8_t retrieve_handler(const struct data *data, const message *request, uint8_t **response, uint64_t *length,
+                         struct dict *dict, char *dir_path, struct linked_list *queue);
+
 #endif
