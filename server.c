@@ -99,9 +99,6 @@ char *read_config(const char *filename, struct in_addr *inaddr, uint16_t *port) 
     return dir_path;
 }
 
-
-
-
 /**
  *
  * @param arg data where stores the connect_fd and request message
@@ -151,27 +148,16 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
-
-            char *filename = concatenate_filename(request->payload, dir_path, request->length);
-            FILE *f = fopen(filename, "r");
-            if (!f) {
-                send_error(data->connect_fd);
+            if (file_size_handler(data, request, &dict, dir_path) == 0) {
                 break;
             }
-            size_t sz = file_size(f);
-            fclose(f);
-            free(filename);
-
-            file_size_handler(data, request, sz, &dict);
 
         } else if (type == (unsigned) 0x6) {
-            uint8_t *response;
-            uint64_t length;
-            if (retrieve_handler(data, request, &response, &length, &dict, dir_path, &queue) == 0){
+
+            if (retrieve_handler(data, request, &dict, dir_path, &queue) == 0) {
                 break;
             }
-            send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
-            free(response);
+
         } else if (type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);

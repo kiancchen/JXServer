@@ -153,7 +153,16 @@ void directory_list_handler(const struct data *data, const message *request, str
 }
 
 
-void file_size_handler(const struct data *data, const message *request, size_t sz, struct dict *dict) {
+uint8_t file_size_handler(const struct data *data, const message *request, struct dict *dict, char *dir_path) {
+    char *filename = concatenate_filename(request->payload, dir_path, request->length);
+    FILE *f = fopen(filename, "r");
+    if (!f) {
+        send_error(data->connect_fd);
+        return 0;
+    }
+    size_t sz = file_size(f);
+    fclose(f);
+    free(filename);
     // convert to network byte order
     uint64_t length = 8;
     uint64_t size_64 = htobe64(sz);
@@ -169,12 +178,15 @@ void file_size_handler(const struct data *data, const message *request, size_t s
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
     free(payload);
     free(response);
+    return 1;
 }
 
-uint8_t retrieve_handler(const struct data *data, const message *request, uint8_t **response, uint64_t *length,
-                         struct dict *dict, char *dir_path, struct linked_list *queue) {
+uint8_t retrieve_handler(const struct data *data, const message *request, struct dict *dict, char *dir_path,
+                         struct linked_list *queue) {
+    uint8_t *response;
+    uint64_t length;
     uint8_t *request_payload;
-    decompress_payload(dict, request, &request_payload, length);
+    decompress_payload(dict, request, &request_payload, &length);
     // get the information from the file_data: session id; starting offset; data length;
     uint32_t id;
     uint64_t starting;
@@ -182,7 +194,7 @@ uint8_t retrieve_handler(const struct data *data, const message *request, uint8_
     retrieve_get_info(request_payload, &id, &starting, &len_data);
 
     // Concatenate the filename
-    uint64_t len_filename = *length - RETRIEVE_INFO_LEN;
+    uint64_t len_filename = length - RETRIEVE_INFO_LEN;
     char *filename = concatenate_filename(request_payload + RETRIEVE_INFO_LEN, dir_path, len_filename);
 
     // process request queue
@@ -222,19 +234,21 @@ uint8_t retrieve_handler(const struct data *data, const message *request, uint8_
     memcpy(file_data, buffer + starting, len_data);
     free(buffer);
     // Concatenate the payloads
-    *length = len_data + RETRIEVE_INFO_LEN;
-    uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * *length);
+    length = len_data + RETRIEVE_INFO_LEN;
+    uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
     memcpy(uncompressed_payload, request_payload, 20);
     memcpy(uncompressed_payload + 20, file_data, len_data);
     free(file_data);
     // make the response
 
     if (request->header->req_compress == (unsigned) 0) {
-        uncompressed_response(response, uncompressed_payload, length, 0x7);
+        uncompressed_response(&response, uncompressed_payload, &length, 0x7);
     } else {
-        compress_response(dict, response, uncompressed_payload, length, 0x7);
+        compress_response(dict, &response, uncompressed_payload, &length, 0x7);
     }
     node->querying = 0;
+    send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+    free(response);
     return 1;
 }
 
