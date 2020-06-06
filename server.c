@@ -228,6 +228,7 @@ uint8_t retrieve_handler(const struct data *data, const message *request, uint8_
         compress_response(&dict, response, uncompressed_payload, length, 0x7);
     }
     node->querying = 0;
+    return 1;
 }
 
 /**
@@ -295,9 +296,9 @@ void *connection_handler(void *arg) {
         } else if (type == (unsigned) 0x6) {
             uint8_t *response;
             uint64_t length;
-            retrieve_handler(data, request, &response, &length);
-
-
+            if (retrieve_handler(data, request, &response, &length) == 0){
+                break;
+            }
             send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
             free(response);
         } else if (type == (unsigned) 0x8) {
