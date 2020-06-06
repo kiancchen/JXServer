@@ -99,7 +99,9 @@ void compress_response(struct dict *dict, uint8_t **response, const uint8_t *pay
 
 void decompress_payload(struct dict *dict, const message *request, uint8_t **request_payload, uint64_t *length) {
     if (request->header->compressed == (unsigned) 0) {
-        (*request_payload) = request->payload;
+        (*request_payload) = malloc(sizeof(uint8_t) * request->length);
+        memcpy(*request_payload, request->payload, request->length);
+//        (*request_payload) = request->payload;
         (*length) = request->length;
     } else {
         (*request_payload) = decompress(dict, request->payload, request->length, length);
@@ -246,6 +248,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     }
     node->querying = 0;
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+    free(request_payload);
     free(uncompressed_payload);
     free(response);
     return SUCCESS;
