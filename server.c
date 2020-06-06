@@ -5,6 +5,8 @@ char *dir_path;
 struct linked_list queue;
 
 
+void *shutdown_handler(int connect_fd, message *request);
+
 /**
  * Read the request from the client.
  * @param connect_fd Connection file description
@@ -105,7 +107,7 @@ char *read_config(const char *filename, struct in_addr *inaddr, uint16_t *port) 
  * @return NULL
  */
 void *connection_handler(void *arg) {
-    int connect_fd = *((int*) arg);
+    int connect_fd = *((int *) arg);
 
     while (1) {
         message *request = malloc(sizeof(message));
@@ -115,7 +117,8 @@ void *connection_handler(void *arg) {
 
         if (error == CON_CLS) {
             // Connection is closed
-            close(connect_fd);
+            shutdown_handler(connect_fd, request);
+//            close(connect_fd);
             free_request(request);
             break;
         }
@@ -172,15 +175,8 @@ void *connection_handler(void *arg) {
 //                send_error(data->connect_fd);
 //                break;
 //            }
-            shutdown(connect_fd, SHUT_RDWR);
-            close(connect_fd);
-            free(request->header);
-            free(request->payload);
-            free(request);
-            destroy_linked_list(&queue);
-            pthread_mutex_destroy(&(queue.mutex));
-            free(dir_path);
-            exit(0);
+            shutdown_handler(connect_fd, request);
+            break;
 
         } else {
             send_error(connect_fd);
@@ -189,6 +185,18 @@ void *connection_handler(void *arg) {
         }
     }
     return NULL;
+}
+
+void *shutdown_handler(int connect_fd, message *request) {
+    shutdown(connect_fd, SHUT_RDWR);
+    close(connect_fd);
+    free(request->header);
+    free(request->payload);
+    free(request);
+    destroy_linked_list(&queue);
+    pthread_mutex_destroy(&(queue.mutex));
+    free(dir_path);
+    exit(0);
 }
 
 
