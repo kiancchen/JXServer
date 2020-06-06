@@ -166,8 +166,8 @@ void *connection_handler(void *arg) {
 //                send_error(data->connect_fd);
 //                break;
 //            }
-
-
+            shutdown(data->connect_fd, SHUT_RDWR);
+            close(data->connect_fd);
             free(request->header);
             free(request->payload);
             free(request);
@@ -176,10 +176,7 @@ void *connection_handler(void *arg) {
             destroy_linked_list(&queue);
             pthread_mutex_destroy(&(queue.mutex));
             free(dir_path);
-            shutdown(data->connect_fd, SHUT_RDWR);
-            close(data->connect_fd);
             exit(0);
-            break;
 
         } else {
             send_error(data->connect_fd);
