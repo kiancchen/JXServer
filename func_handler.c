@@ -157,8 +157,7 @@ uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_
     char *filename = concatenate_filename(request->payload, dir_path, request->length);
     FILE *f = fopen(filename, "r");
     if (!f) {
-        send_error(data->connect_fd);
-        return 0;
+        return ERROR_OCCUR;
     }
     size_t sz = file_size(f);
     fclose(f);
@@ -178,7 +177,7 @@ uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
     free(payload);
     free(response);
-    return 1;
+    return SUCCESS;
 }
 
 uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_path, struct linked_list *queue,
@@ -206,11 +205,11 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     } else if (signal == EXIST) {
         send_empty_retrieve(data->connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
-        return 0;
+        return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYING) {
         send_error(data->connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
-        return 0;
+        return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYED) {
         add_node(queue, node);
     }
@@ -223,7 +222,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     size_t sz;
     if (!f || (starting + len_data) > (sz = file_size(f))) {
         send_error(data->connect_fd);
-        return 0;
+        return ERROR_OCCUR;
     }
     char *buffer = malloc(sizeof(char) * sz);
     fread(buffer, sizeof(char), sz, f);
@@ -248,7 +247,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     node->querying = 0;
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
     free(response);
-    return 1;
+    return SUCCESS;
 }
 
 #endif

@@ -20,6 +20,7 @@
 
 #define CON_CLS (0)
 #define INVALID_MSG (1)
+#define ERROR_OCCUR (1)
 #define SUCCESS (2)
 #define LEN_ZERO (3)
 #define make_header(type, com, req) (type << 4u | com << 3u | req << 2u)

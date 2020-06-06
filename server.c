@@ -6,7 +6,7 @@ struct linked_list queue;
 
 
 /**
- *
+ * Read the request from the client.
  * @param connect_fd Connection file description
  * @param request where to stores the request
  * @return 0 for connection closed; 1 for invalid input; 2 for success
@@ -59,7 +59,7 @@ uint8_t read_request(int connect_fd, message *request) {
 }
 
 /**
- *
+ * Read the configuration file.
  * @param filename The filename of config
  * @param inaddr where stores the address
  * @param port  where stores the port
@@ -100,7 +100,7 @@ char *read_config(const char *filename, struct in_addr *inaddr, uint16_t *port) 
 }
 
 /**
- *
+ * Each request will be handled by a thread with this function.
  * @param arg data where stores the connect_fd and request message
  * @return NULL
  */
@@ -148,12 +148,15 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
-            if (file_size_handler(data, &dict, dir_path, request) == 0) {
+            if (file_size_handler(data, &dict, dir_path, request) == ERROR_OCCUR) {
+                // Error occurs
+                send_error(data->connect_fd);
                 break;
             }
 
         } else if (type == (unsigned) 0x6) {
-            if (retrieve_handler(data, &dict, dir_path, &queue, request) == 0) {
+            if (retrieve_handler(data, &dict, dir_path, &queue, request) == ERROR_OCCUR) {
+                // Error occurs
                 break;
             }
 
