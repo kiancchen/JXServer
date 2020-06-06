@@ -29,6 +29,8 @@ struct node *new_node(char *filename, uint32_t id, uint64_t starting, uint64_t l
  */
 uint8_t list_contains(struct linked_list *linked_list, struct node *node) {
     struct node *cur = linked_list->head;
+    uint8_t temp = NON_EXIST;
+    struct node *temp_node = NULL;
     while (cur != NULL) {
         if (cur->id == node->id) {
             if (strcmp(cur->filename, node->filename) == 0 && cur->starting == node->starting &&
@@ -41,11 +43,16 @@ uint8_t list_contains(struct linked_list *linked_list, struct node *node) {
                 } else {
                     // This query is finished
                     cur->querying = 1; // Change to ongoing status
-                    return SAME_ID_DIFF_OTHER_QUERYED;
+                    temp_node = cur;
+                    temp = SAME_ID_DIFF_OTHER_QUERYED;
                 }
             }
         }
         cur = cur->next;
+    }
+    if (temp != NON_EXIST) {
+        temp_node->querying = 1;
+        return temp;
     }
     return NON_EXIST;
 }
@@ -55,9 +62,9 @@ uint8_t list_contains(struct linked_list *linked_list, struct node *node) {
  * @param linked_list The linked list to be added into
  * @param node The node to be added
  */
-void add_node(struct linked_list* linked_list, struct node *node){
+void add_node(struct linked_list *linked_list, struct node *node) {
     struct node *cur = linked_list->head;
-    if (cur == NULL){
+    if (cur == NULL) {
         linked_list->head = node;
         return;
     }
@@ -72,7 +79,7 @@ void add_node(struct linked_list* linked_list, struct node *node){
  * Free all memory used by a linked list
  * @param linked_list The list to be freed
  */
-void destroy_linked_list(struct linked_list* linked_list){
+void destroy_linked_list(struct linked_list *linked_list) {
     struct node *cur = linked_list->head;
 
     while (cur != NULL) {
