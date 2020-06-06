@@ -106,7 +106,7 @@ void decompress_payload(struct dict *dict, const message *request, uint8_t **req
     }
 }
 
-void echo_handler(const struct data *data, struct dict *dict, const message *request) {
+void echo_handler(const struct data *data, struct dict *dict, message *request) {
     uint8_t *response;
     uint64_t length = request->length;
     if (request->header->compressed != (unsigned) 0 || request->header->req_compress != (unsigned) 1) {
@@ -122,6 +122,9 @@ void echo_handler(const struct data *data, struct dict *dict, const message *req
     // Send the response
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
     free(response);
+    free(request->header);
+    free(request->payload);
+    free(request);
 }
 
 void directory_list_handler(const struct data *data, struct dict *dict, char *dir_path, const message *request) {
