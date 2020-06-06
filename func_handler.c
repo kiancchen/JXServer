@@ -231,7 +231,6 @@ uint8_t retrieve_handler(int connect_fd, struct dict *dict, char *dir_path, stru
     size_t sz;
     if (!f || (starting + len_data) > (sz = file_size(f))) {
         send_error(connect_fd);
-        free(filename);
         free(request_payload);
         return ERROR_OCCUR;
     }
