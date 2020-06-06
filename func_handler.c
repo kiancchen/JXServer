@@ -201,6 +201,7 @@ uint8_t retrieve_handler(int connect_fd, struct dict *dict, char *dir_path, stru
     uint64_t len_filename = length - RETRIEVE_INFO_LEN;
     char *filename = concatenate_filename(request_payload + RETRIEVE_INFO_LEN, dir_path, len_filename);
 
+
     // process request queue
     struct node *node = new_node(filename, id, starting, len_data);
     pthread_mutex_lock(&(queue->mutex));
