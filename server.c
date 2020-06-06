@@ -196,6 +196,7 @@ void *connection_handler(void *arg) {
             free_request(request);
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
+            free(data);
             exit(0);
         } else {
             send_error(data->connect_fd);
