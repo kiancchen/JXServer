@@ -197,9 +197,22 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     // Concatenate the filename
     uint64_t len_filename = length - RETRIEVE_INFO_LEN;
     char *filename = concatenate_filename(request_payload + RETRIEVE_INFO_LEN, dir_path, len_filename);
+    // open and read the file
+    FILE *f = fopen(filename, "r");
+    size_t sz;
+    if (!f || (starting + len_data) > (sz = file_size(f))) {
+        send_error(data->connect_fd);
+        free(request_payload);
+        return ERROR_OCCUR;
+    }
+    char *buffer = malloc(sizeof(char) * sz);
+    fread(buffer, sizeof(char), sz, f);
+    fclose(f);
+
 
     // process request queue
     struct node *node = new_node(filename, id, starting, len_data);
+    free(filename);
     pthread_mutex_lock(&(queue->mutex));
     uint8_t signal = list_contains(queue, node);
     if (signal == NON_EXIST) {
@@ -207,7 +220,6 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     } else if (signal == EXIST) {
         send_empty_retrieve(data->connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
-        free(filename);
         free(request_payload);
         free(node->filename);
         free(node);
@@ -215,7 +227,6 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYING) {
         send_error(data->connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
-        free(filename);
         free(request_payload);
         free(node->filename);
         free(node);
@@ -226,18 +237,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     pthread_mutex_unlock(&(queue->mutex));
     // end of queue process
 
-    // open and read the file
-    FILE *f = fopen(filename, "r");
-    free(filename);
-    size_t sz;
-    if (!f || (starting + len_data) > (sz = file_size(f))) {
-        send_error(data->connect_fd);
-        free(request_payload);
-        return ERROR_OCCUR;
-    }
-    char *buffer = malloc(sizeof(char) * sz);
-    fread(buffer, sizeof(char), sz, f);
-    fclose(f);
+
 
     //make the file_data
     uint8_t *file_data = malloc(sizeof(uint8_t) * len_data);

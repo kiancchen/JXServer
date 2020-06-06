@@ -167,6 +167,7 @@ void *connection_handler(void *arg) {
             free_request(request);
 
         } else if (type == (unsigned) 0x6) {
+            // Retrieve file Functionality
             if (retrieve_handler(data, &dict, dir_path, &queue, request) == ERROR_OCCUR) {
                 // Error occurs
                 free_request(request);
@@ -175,13 +176,13 @@ void *connection_handler(void *arg) {
             free_request(request);
 
         } else if (type == (unsigned) 0x8) {
+            // Shutdown
             if (request->length != 0){
-                printf("%lx\n", request->length);
+                // Error occurs
                 send_error(data->connect_fd);
                 free_request(request);
                 break;
             }
-
 
             destroy_linked_list(&queue);
             pthread_mutex_destroy(&(queue.mutex));
