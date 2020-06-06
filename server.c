@@ -115,7 +115,6 @@ void *connection_handler(void *arg) {
     while (1) {
         message *request = malloc(sizeof(message));
 
-
         // Read the header, payload length and payload
         uint8_t error = read_request(data->connect_fd, request);
 
@@ -182,8 +181,6 @@ void *connection_handler(void *arg) {
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
             exit(0);
-
-
         } else {
             send_error(data->connect_fd);
             free_request(request);
