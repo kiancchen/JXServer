@@ -174,6 +174,13 @@ void *connection_handler(void *arg) {
             free_request(request);
 
         } else if (type == (unsigned) 0x8) {
+            if (request->length != 0){
+                send_error(data->connect_fd);
+                free_request(request);
+                break;
+            }
+
+
             destroy_linked_list(&queue);
             pthread_mutex_destroy(&(queue.mutex));
             free(dir_path);
