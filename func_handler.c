@@ -159,8 +159,7 @@ uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_
     uint64_t length;
     uint8_t *request_payload;
     decompress_payload(dict, request, &request_payload, &length);
-
-
+    // Concatenate the filename
     char *filename = concatenate_filename(request_payload, dir_path, length);
     free(request_payload);
     FILE *f = fopen(filename, "r");
@@ -190,6 +189,7 @@ uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_
 
 uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_path, struct linked_list *queue,
                          const message *request) {
+    // Check to decompress the payload
     uint64_t length;
     uint8_t *request_payload;
     decompress_payload(dict, request, &request_payload, &length);
@@ -211,22 +211,23 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         add_node(queue, node);
     } else if (signal == EXIST) {
         send_empty_retrieve(data->connect_fd);
-        pthread_mutex_unlock(&(queue->mutex));
         free(filename);
         free(request_payload);
         free(node->filename);
         free(node);
+        pthread_mutex_unlock(&(queue->mutex));
         return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYING) {
         send_error(data->connect_fd);
-        pthread_mutex_unlock(&(queue->mutex));
         free(filename);
         free(request_payload);
         free(node->filename);
         free(node);
+        pthread_mutex_unlock(&(queue->mutex));
         return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYED) {
-        add_node(queue, node);
+        free(node->filename);
+        free(node);
     }
     pthread_mutex_unlock(&(queue->mutex));
     // end of queue process
