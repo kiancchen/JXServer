@@ -182,7 +182,7 @@ void *connection_handler(void *arg) {
             destroy_linked_list(&queue);
             pthread_mutex_destroy(&(queue.mutex));
             free(dir_path);
-            exit(0);
+
 
         } else {
             send_error(connect_fd);
