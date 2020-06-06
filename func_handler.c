@@ -122,12 +122,10 @@ void echo_handler(const struct data *data, struct dict *dict, message *request) 
     // Send the response
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
     free(response);
-    free(request->header);
-    free(request->payload);
-    free(request);
+    free_request(request);
 }
 
-void directory_list_handler(const struct data *data, struct dict *dict, char *dir_path, const message *request) {
+void directory_list_handler(const struct data *data, struct dict *dict, char *dir_path, message *request) {
     uint8_t *response;
     uint64_t length;
     // get the list of files
@@ -153,10 +151,11 @@ void directory_list_handler(const struct data *data, struct dict *dict, char *di
     free(response);
     free(file_list);
     free(payload);
+    free_request(request);
 }
 
 
-uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_path, const message *request) {
+uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_path, message *request) {
     char *filename = concatenate_filename(request->payload, dir_path, request->length);
     FILE *f = fopen(filename, "r");
     if (!f) {
@@ -180,11 +179,12 @@ uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
     free(payload);
     free(response);
+    free_request(request);
     return SUCCESS;
 }
 
 uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_path, struct linked_list *queue,
-                         const message *request) {
+                         message *request) {
     uint8_t *response;
     uint64_t length;
     uint8_t *request_payload;
@@ -250,7 +250,14 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     node->querying = 0;
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
     free(response);
+    free_request(request);
     return SUCCESS;
+}
+
+void free_request(message *request){
+    free(request->header);
+    free(request->payload);
+    free(request);
 }
 
 #endif
