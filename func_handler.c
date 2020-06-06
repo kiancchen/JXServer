@@ -210,10 +210,12 @@ uint8_t retrieve_handler(int connect_fd, struct dict *dict, char *dir_path, stru
     } else if (signal == EXIST) {
         send_empty_retrieve(connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
+        free(filename);
         return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYING) {
         send_error(connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
+        free(filename);
         return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYED) {
         add_node(queue, node);
