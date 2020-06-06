@@ -46,4 +46,20 @@ struct data {
 
 void uint64_to_uint8(uint8_t *dest, uint64_t src);
 
+void msg_to_response(const message *msg, uint8_t *response);
+
+char *concatenate_filename(uint8_t *payload, uint64_t length);
+
+void retrieve_get_info(const uint8_t *request_payload, uint32_t *id, uint64_t *starting, uint64_t *len_data);
+
+void send_error(int connect_fd);
+
+void send_empty_retrieve(int connect_fd);
+
+void uncompressed_response(uint8_t **response, const uint8_t *payload, uint64_t *length, uint8_t type);
+
+void compress_response(uint8_t **response, const uint8_t *payload, uint64_t *length, uint8_t type);
+
+void decompress_payload(const message *request, uint8_t **request_payload, uint64_t *length);
+
 #endif

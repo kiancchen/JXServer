@@ -1,7 +1,7 @@
 #ifndef DICT_H_
 #define DICT_H_
 
-#include "util.h"
+#include "func_handler.h"
 #include <dirent.h>
 
 #define upper_divide(a, b) ((a % b == 0) ? (a / b) : ((a / b) + 1))

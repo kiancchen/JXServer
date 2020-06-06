@@ -1,7 +1,7 @@
 #ifndef LINKED_LIST_H_
 #define LINKED_LIST_H_
 
-#include "util.h"
+#include "func_handler.h"
 
 #define NON_EXIST 0
 #define EXIST 1
