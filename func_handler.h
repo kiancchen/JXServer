@@ -40,10 +40,10 @@ typedef struct {
     uint8_t *payload;
 } message;
 
-//struct data {
-//    int connect_fd;
-//    message *msg;
-//};
+struct data {
+    int connect_fd;
+    message *msg;
+};
 
 void uint64_to_uint8(uint8_t *dest, uint64_t src);
 
@@ -63,15 +63,13 @@ void compress_response(struct dict *dict, uint8_t **response, const uint8_t *pay
 
 void decompress_payload(struct dict *dict, const message *request, uint8_t **request_payload, uint64_t *length);
 
-void echo_handler(int connect_fd, struct dict *dict, message *request);
+void echo_handler(const struct data *data, struct dict *dict, const message *request);
 
-void directory_list_handler(int connect_fd, struct dict *dict, char *dir_path, message *request);
+void directory_list_handler(const struct data *data, struct dict *dict, char *dir_path, const message *request);
 
-uint8_t file_size_handler(int connect_fd, struct dict *dict, char *dir_path, message *request);
+uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_path, const message *request);
 
-uint8_t retrieve_handler(int connect_fd, struct dict *dict, char *dir_path, struct linked_list *queue,
-                         message *request);
-
-void free_request(message *request);
+uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_path, struct linked_list *queue,
+                         const message *request);
 
 #endif
