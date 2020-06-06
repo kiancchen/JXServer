@@ -141,6 +141,7 @@ void *connection_handler(void *arg) {
                 break;
             }
             echo_handler(data, &dict, request);
+            free_request(request);
 
         } else if (type == (unsigned) 0x2) {
             // Directory list Functionality
