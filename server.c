@@ -4,7 +4,11 @@ struct dict dict;
 char *dir_path;
 struct linked_list queue;
 
-void free_request(message *request){
+/**
+ * Free the memory used by the request
+ * @param request The request need to be freed
+ */
+void free_request(message *request) {
     free(request->header);
     free(request->payload);
     free(request);
@@ -14,7 +18,8 @@ void free_request(message *request){
  * Read the request from the client.
  * @param connect_fd Connection file description
  * @param request where to stores the request
- * @return 0 for connection closed; 1 for invalid input; 2 for success
+ * @return The signal showing how does it function run: CON_CLS: Connection closed; INVALID_MSG: Error;
+ *                                          LEN_ZERO: The length of payload is zero; SUCCESS: run successfully
  */
 uint8_t read_request(int connect_fd, message *request) {
     // init as NULL
@@ -106,7 +111,7 @@ char *read_config(const char *filename, struct in_addr *inaddr, uint16_t *port) 
 
 /**
  * Each request will be handled by a thread with this function.
- * @param arg data where stores the connect_fd and request message
+ * @param arg data where stores the connect_fd
  * @return NULL
  */
 void *connection_handler(void *arg) {
@@ -177,7 +182,7 @@ void *connection_handler(void *arg) {
 
         } else if (type == (unsigned) 0x8) {
             // Shutdown
-            if (request->length != 0){
+            if (request->length != 0) {
                 // Error occurs
                 send_error(data->connect_fd);
                 free_request(request);
@@ -261,7 +266,6 @@ int main(int argc, char **argv) {
         pthread_t thread;
         pthread_create(&thread, NULL, connection_handler, data);
     }
-
     close(listenfd);
     return 0;
 }
