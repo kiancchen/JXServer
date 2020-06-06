@@ -252,6 +252,7 @@ uint8_t retrieve_handler(int connect_fd, struct dict *dict, char *dir_path, stru
     free(response);
     free(uncompressed_payload);
     free_request(request);
+    request->payload = NULL;
     free(request_payload);
     return SUCCESS;
 }
