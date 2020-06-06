@@ -207,10 +207,14 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     } else if (signal == EXIST) {
         send_empty_retrieve(data->connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
+        free(node->filename);
+        free(node);
         return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYING) {
         send_error(data->connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
+        free(node->filename);
+        free(node);
         return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYED) {
         add_node(queue, node);
