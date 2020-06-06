@@ -6,6 +6,8 @@ struct linked_list queue;
 
 void uncompressed_response(uint8_t **response, const uint8_t *payload, uint64_t *length, uint8_t type);
 
+void retrieve_get_info(const uint8_t *request_payload, uint32_t *id, uint64_t *starting);
+
 char *concatenate_filename(uint8_t *payload, uint64_t length) {
     char *filename = malloc(sizeof(char) * (strlen(dir_path) + length + 2));
     filename[strlen(dir_path) + length + 1] = '\0';
@@ -318,13 +320,8 @@ void *connection_handler(void *arg) {
             decompress_payload(request, &request_payload, &length);
             // get the information from the file_data: session id; starting offset; data length;
             uint32_t id;
-            memcpy(&id, request_payload, 4);
-            id = htobe32(id);
-
-            // get the starting offset
             uint64_t starting;
-            memcpy(&starting, request_payload + 4, 8);
-            starting = htobe64(starting);
+            retrieve_get_info(request_payload, &id, &starting);
 
             // get the length of data required
             uint64_t len_data;
@@ -380,17 +377,6 @@ void *connection_handler(void *arg) {
 
             if (request->header->req_compress == (unsigned) 0) {
                 uncompressed_response(&response, uncompressed_payload, &length, 0x7);
-//                // make the response
-//                response = malloc(sizeof(uint8_t) * (HEADER_LENGTH + length));
-//                response[0] = make_header(0x7, 0, 0);
-//                // make the file_data length
-//                uint64_to_uint8(response + 1, htobe64(length));
-//                // fill the file info
-//                memcpy(response + 9, request_payload, RETRIEVE_INFO_LEN);
-//                // fill the file data
-//                memcpy(response + 29, file_data, len_data);
-//
-//                length += HEADER_LENGTH;
             } else {
                 compress_response(&response, uncompressed_payload, &length, 0x7);
             }
@@ -417,6 +403,15 @@ void *connection_handler(void *arg) {
     // Clean up
     free(data);
     return NULL;
+}
+
+void retrieve_get_info(const uint8_t *request_payload, uint32_t *id, uint64_t *starting) {
+    memcpy(id, request_payload, 4);
+    (*id) = htobe32((*id));
+
+    // get the starting offset
+    memcpy(starting, request_payload + 4, 8);
+    (*starting) = htobe64((*starting));
 }
 
 int main(int argc, char **argv) {
