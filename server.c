@@ -105,7 +105,7 @@ char *read_config(const char *filename, struct in_addr *inaddr, uint16_t *port) 
  * @return NULL
  */
 void *connection_handler(void *arg) {
-    int connect_fd = (int) arg;
+    int connect_fd = *((int*) arg);
 
     while (1) {
         message *request = malloc(sizeof(message));
@@ -179,11 +179,7 @@ void *connection_handler(void *arg) {
             send_error(connect_fd);
             break;
         }
-        // Clean up
-
     }
-    // Clean up
-
     return NULL;
 }
 

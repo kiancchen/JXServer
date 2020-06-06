@@ -164,8 +164,8 @@ uint8_t file_size_handler(int connect_fd, struct dict *dict, char *dir_path, mes
     size_t sz = file_size(f);
     fclose(f);
     free(filename);
-    // convert to network byte order
     uint64_t length = 8;
+    // convert to network byte order
     uint64_t size_64 = htobe64(sz);
     uint8_t *payload = malloc(sizeof(uint8_t) * length);
     uint64_to_uint8(payload, size_64);
