@@ -171,7 +171,6 @@ void *connection_handler(void *arg) {
             free(request->header);
             free(request->payload);
             free(request);
-            free(data);
             destroy_linked_list(&queue);
             pthread_mutex_destroy(&(queue.mutex));
             free(dir_path);

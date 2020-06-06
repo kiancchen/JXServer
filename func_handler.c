@@ -106,7 +106,7 @@ void decompress_payload(struct dict *dict, const message *request, uint8_t **req
     }
 }
 
-void echo_handler(const struct data *data, struct dict *dict, message *request) {
+void echo_handler(struct data *data, struct dict *dict, message *request) {
     uint8_t *response;
     uint64_t length = request->length;
     if (request->header->compressed != (unsigned) 0 || request->header->req_compress != (unsigned) 1) {
@@ -123,9 +123,10 @@ void echo_handler(const struct data *data, struct dict *dict, message *request) 
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
     free(response);
     free_request(request);
+    free(data);
 }
 
-void directory_list_handler(const struct data *data, struct dict *dict, char *dir_path, message *request) {
+void directory_list_handler(struct data *data, struct dict *dict, char *dir_path, message *request) {
     uint8_t *response;
     uint64_t length;
     // get the list of files
@@ -152,10 +153,11 @@ void directory_list_handler(const struct data *data, struct dict *dict, char *di
     free(file_list);
     free(payload);
     free_request(request);
+    free(data);
 }
 
 
-uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_path, message *request) {
+uint8_t file_size_handler(struct data *data, struct dict *dict, char *dir_path, message *request) {
     char *filename = concatenate_filename(request->payload, dir_path, request->length);
     FILE *f = fopen(filename, "r");
     if (!f) {
@@ -180,10 +182,11 @@ uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_
     free(payload);
     free(response);
     free_request(request);
+    free(data);
     return SUCCESS;
 }
 
-uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_path, struct linked_list *queue,
+uint8_t retrieve_handler(struct data *data, struct dict *dict, char *dir_path, struct linked_list *queue,
                          message *request) {
     uint8_t *response;
     uint64_t length;
@@ -251,6 +254,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
     free(response);
     free_request(request);
+    free(data);
     return SUCCESS;
 }
 
