@@ -250,6 +250,7 @@ uint8_t retrieve_handler(int connect_fd, struct dict *dict, char *dir_path, stru
     node->querying = 0;
     send(connect_fd, response, sizeof(uint8_t) * length, 0);
     free(response);
+    free(uncompressed_payload);
     free_request(request);
     return SUCCESS;
 }
