@@ -195,7 +195,7 @@ void *shutdown_handler(int connect_fd, message *request) {
     destroy_linked_list(&queue);
     pthread_mutex_destroy(&(queue.mutex));
     free(dir_path);
-    exit(0);
+
 }
 
 
