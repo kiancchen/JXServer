@@ -179,7 +179,7 @@ void *connection_handler(void *arg) {
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
             exit(0);
-            break;
+
 
         } else {
             send_error(data->connect_fd);
