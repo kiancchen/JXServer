@@ -230,7 +230,7 @@ void *connection_handler(void *arg) {
         } else if (type == (unsigned) 0x6) {
             uint8_t *request_payload;
             uint64_t length;
-            decompress_payload(request, &request_payload, &length);
+            decompress_payload(&dict, request, &request_payload, &length);
             // get the information from the file_data: session id; starting offset; data length;
             uint32_t id;
             uint64_t starting;
