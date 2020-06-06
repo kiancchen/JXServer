@@ -175,7 +175,7 @@ void *connection_handler(void *arg) {
 
         } else if (type == (unsigned) 0x8) {
             if (request->length != 0){
-                printf("%llx\n", request->length);
+                printf("%lx\n", request->length);
                 send_error(data->connect_fd);
                 free_request(request);
                 break;
