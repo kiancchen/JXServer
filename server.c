@@ -126,6 +126,7 @@ void *connection_handler(void *arg) {
 
         if (error == CON_CLS) {
             // Connection is closed
+            shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
             free_request(request);
             break;
