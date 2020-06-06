@@ -165,6 +165,71 @@ void file_size_handler(const struct data *data, const message *request, size_t s
     free(response);
 }
 
+uint8_t retrieve_handler(const struct data *data, const message *request, uint8_t **response, uint64_t *length) {
+    uint8_t *request_payload;
+    decompress_payload(&dict, request, &request_payload, length);
+    // get the information from the file_data: session id; starting offset; data length;
+    uint32_t id;
+    uint64_t starting;
+    uint64_t len_data;
+    retrieve_get_info(request_payload, &id, &starting, &len_data);
+
+    // Concatenate the filename
+    uint64_t len_filename = *length - RETRIEVE_INFO_LEN;
+    char *filename = concatenate_filename(request_payload + RETRIEVE_INFO_LEN, dir_path, len_filename);
+
+    // process request queue
+    struct node *node = new_node(filename, id, starting, len_data);
+    pthread_mutex_lock(&(queue.mutex));
+    uint8_t signal = list_contains(&queue, node);
+    if (signal == NON_EXIST) {
+        add_node(&queue, node);
+    } else if (signal == EXIST) {
+        send_empty_retrieve(data->connect_fd);
+        pthread_mutex_unlock(&(queue.mutex));
+        return 0;
+    } else if (signal == SAME_ID_DIFF_OTHER_QUERYING) {
+        send_error(data->connect_fd);
+        pthread_mutex_unlock(&(queue.mutex));
+        return 0;
+    } else if (signal == SAME_ID_DIFF_OTHER_QUERYED) {
+        add_node(&queue, node);
+    }
+    pthread_mutex_unlock(&(queue.mutex));
+    // end of queue process
+
+    // open and read the file
+    FILE *f = fopen(filename, "r");
+    free(filename);
+    size_t sz;
+    if (!f || (starting + len_data) > (sz = file_size(f))) {
+        send_error(data->connect_fd);
+        return 0;
+    }
+    char *buffer = malloc(sizeof(char) * sz);
+    fread(buffer, sizeof(char), sz, f);
+    fclose(f);
+
+    //make the file_data
+    uint8_t *file_data = malloc(sizeof(uint8_t) * len_data);
+    memcpy(file_data, buffer + starting, len_data);
+    free(buffer);
+    // Concatenate the payloads
+    *length = len_data + RETRIEVE_INFO_LEN;
+    uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * *length);
+    memcpy(uncompressed_payload, request_payload, 20);
+    memcpy(uncompressed_payload + 20, file_data, len_data);
+    free(file_data);
+    // make the response
+
+    if (request->header->req_compress == (unsigned) 0) {
+        uncompressed_response(response, uncompressed_payload, length, 0x7);
+    } else {
+        compress_response(&dict, response, uncompressed_payload, length, 0x7);
+    }
+    node->querying = 0;
+}
+
 /**
  *
  * @param arg data where stores the connect_fd and request message
@@ -228,72 +293,12 @@ void *connection_handler(void *arg) {
             file_size_handler(data, request, sz);
 
         } else if (type == (unsigned) 0x6) {
-            uint8_t *request_payload;
-            uint64_t length;
-            decompress_payload(&dict, request, &request_payload, &length);
-            // get the information from the file_data: session id; starting offset; data length;
-            uint32_t id;
-            uint64_t starting;
-            uint64_t len_data;
-            retrieve_get_info(request_payload, &id, &starting, &len_data);
-
-            // Concatenate the filename
-            uint64_t len_filename = length - RETRIEVE_INFO_LEN;
-            char *filename = concatenate_filename(request_payload + RETRIEVE_INFO_LEN, dir_path, len_filename);
-
-            // process request queue
-            struct node *node = new_node(filename, id, starting, len_data);
-            pthread_mutex_lock(&(queue.mutex));
-            uint8_t signal = list_contains(&queue, node);
-            if (signal == NON_EXIST) {
-                add_node(&queue, node);
-            } else if (signal == EXIST) {
-                send_empty_retrieve(data->connect_fd);
-                pthread_mutex_unlock(&(queue.mutex));
-                break;
-            } else if (signal == SAME_ID_DIFF_OTHER_QUERYING) {
-                send_error(data->connect_fd);
-                pthread_mutex_unlock(&(queue.mutex));
-                break;
-            } else if (signal == SAME_ID_DIFF_OTHER_QUERYED) {
-                add_node(&queue, node);
-            }
-            pthread_mutex_unlock(&(queue.mutex));
-            // end of queue process
-
-            // open and read the file
-            FILE *f = fopen(filename, "r");
-            free(filename);
-            size_t sz;
-            if (!f || (starting + len_data) > (sz = file_size(f))) {
-                send_error(data->connect_fd);
-                break;
-            }
-            char *buffer = malloc(sizeof(char) * sz);
-            fread(buffer, sizeof(char), sz, f);
-            fclose(f);
-
-            //make the file_data
-            uint8_t *file_data = malloc(sizeof(uint8_t) * len_data);
-            memcpy(file_data, buffer + starting, len_data);
-            // Concatenate the payloads
-            length = len_data + RETRIEVE_INFO_LEN;
-            uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
-            memcpy(uncompressed_payload, request_payload, 20);
-            memcpy(uncompressed_payload + 20, file_data, len_data);
-            // make the response
             uint8_t *response;
+            uint64_t length;
+            retrieve_handler(data, request, &response, &length);
 
-            if (request->header->req_compress == (unsigned) 0) {
-                uncompressed_response(&response, uncompressed_payload, &length, 0x7);
-            } else {
-                compress_response(&dict, &response, uncompressed_payload, &length, 0x7);
-            }
 
-            node->querying = 0;
             send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
-            free(buffer);
-            free(file_data);
             free(response);
         } else if (type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
