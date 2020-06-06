@@ -163,6 +163,7 @@ void *connection_handler(void *arg) {
         } else if (type == (unsigned) 0x8) {
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
+            exit(0);
             break;
 
         } else {
