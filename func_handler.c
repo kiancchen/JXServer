@@ -207,6 +207,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     } else if (signal == EXIST) {
         send_empty_retrieve(data->connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
+        free(filename);
         free(request_payload);
         free(node->filename);
         free(node);
@@ -214,6 +215,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYING) {
         send_error(data->connect_fd);
         pthread_mutex_unlock(&(queue->mutex));
+        free(filename);
         free(request_payload);
         free(node->filename);
         free(node);
