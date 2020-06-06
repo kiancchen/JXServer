@@ -175,6 +175,9 @@ void *connection_handler(void *arg) {
             free_request(request);
 
         } else if (type == (unsigned) 0x8) {
+            destroy_linked_list(&queue);
+            pthread_mutex_destroy(&(queue.mutex));
+            free(dir_path);
             free_request(request);
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
@@ -251,9 +254,7 @@ int main(int argc, char **argv) {
         pthread_t thread;
         pthread_create(&thread, NULL, connection_handler, data);
     }
-    destroy_linked_list(&queue);
-    pthread_mutex_destroy(&(queue.mutex));
-    free(dir_path);
+
     close(listenfd);
     return 0;
 }
