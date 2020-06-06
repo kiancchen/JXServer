@@ -4,6 +4,11 @@ struct dict dict;
 char *dir_path;
 struct linked_list queue;
 
+void free_request(message *request){
+    free(request->header);
+    free(request->payload);
+    free(request);
+}
 
 /**
  * Read the request from the client.
@@ -109,18 +114,20 @@ void *connection_handler(void *arg) {
 
     while (1) {
         message *request = malloc(sizeof(message));
-        data->msg = request;
+
 
         // Read the header, payload length and payload
         uint8_t error = read_request(data->connect_fd, request);
 
         if (error == CON_CLS) {
             // Connection is closed
+            free_request(request);
             close(data->connect_fd);
             break;
         }
         if (error == INVALID_MSG) {
             // Error occurs
+            free_request(request);
             send_error(data->connect_fd);
             break;
         }
@@ -129,6 +136,7 @@ void *connection_handler(void *arg) {
         if (type == (unsigned) 0x0) {
             // Echo Functionality
             if (error == LEN_ZERO) {
+                free_request(request);
                 send_error(data->connect_fd);
                 break;
             }
@@ -161,6 +169,7 @@ void *connection_handler(void *arg) {
             }
 
         } else if (type == (unsigned) 0x8) {
+            free_request(request);
             shutdown(data->connect_fd, SHUT_RDWR);
             close(data->connect_fd);
             exit(0);
