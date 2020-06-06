@@ -132,7 +132,7 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
-            echo_handler(data, request, &dict);
+            echo_handler(data, &dict, request);
 
         } else if (type == (unsigned) 0x2) {
             // Directory list Functionality
@@ -140,7 +140,7 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
-            directory_list_handler(data, request, &dict, dir_path);
+            directory_list_handler(data, &dict, dir_path, request);
 
         } else if (type == (unsigned) 0x4) {
             // File size query Functionality
@@ -148,13 +148,12 @@ void *connection_handler(void *arg) {
                 send_error(data->connect_fd);
                 break;
             }
-            if (file_size_handler(data, request, &dict, dir_path) == 0) {
+            if (file_size_handler(data, &dict, dir_path, request) == 0) {
                 break;
             }
 
         } else if (type == (unsigned) 0x6) {
-
-            if (retrieve_handler(data, request, &dict, dir_path, &queue) == 0) {
+            if (retrieve_handler(data, &dict, dir_path, &queue, request) == 0) {
                 break;
             }
 

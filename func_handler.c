@@ -106,7 +106,7 @@ void decompress_payload(struct dict *dict, const message *request, uint8_t **req
     }
 }
 
-void echo_handler(const struct data *data, const message *request, struct dict *dict) {
+void echo_handler(const struct data *data, struct dict *dict, const message *request) {
     uint8_t *response;
     uint64_t length = request->length;
     if (request->header->compressed != (unsigned) 0 || request->header->req_compress != (unsigned) 1) {
@@ -124,7 +124,7 @@ void echo_handler(const struct data *data, const message *request, struct dict *
     free(response);
 }
 
-void directory_list_handler(const struct data *data, const message *request, struct dict *dict, char *dir_path) {
+void directory_list_handler(const struct data *data, struct dict *dict, char *dir_path, const message *request) {
     uint8_t *response;
     uint64_t length;
     // get the list of files
@@ -153,7 +153,7 @@ void directory_list_handler(const struct data *data, const message *request, str
 }
 
 
-uint8_t file_size_handler(const struct data *data, const message *request, struct dict *dict, char *dir_path) {
+uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_path, const message *request) {
     char *filename = concatenate_filename(request->payload, dir_path, request->length);
     FILE *f = fopen(filename, "r");
     if (!f) {
@@ -181,8 +181,8 @@ uint8_t file_size_handler(const struct data *data, const message *request, struc
     return 1;
 }
 
-uint8_t retrieve_handler(const struct data *data, const message *request, struct dict *dict, char *dir_path,
-                         struct linked_list *queue) {
+uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_path, struct linked_list *queue,
+                         const message *request) {
     uint8_t *response;
     uint64_t length;
     uint8_t *request_payload;
@@ -240,7 +240,6 @@ uint8_t retrieve_handler(const struct data *data, const message *request, struct
     memcpy(uncompressed_payload + 20, file_data, len_data);
     free(file_data);
     // make the response
-
     if (request->header->req_compress == (unsigned) 0) {
         uncompressed_response(&response, uncompressed_payload, &length, 0x7);
     } else {
