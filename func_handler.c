@@ -290,7 +290,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     if (signal == NON_EXIST) {
         // If the request does not exist, add to the queue and respond to it
         add_node(queue, node);
-    } else if (signal == EXIST) {
+    } else if (signal == EXIST || signal == SAME_ID_DIFF_OTHER_QUERYED) {
         // If the request exists, send an empty response
         send_empty_retrieve(data->connect_fd);
         free(filename);
@@ -308,10 +308,6 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         free(node);
         pthread_mutex_unlock(&(queue->mutex));
         return ERROR_OCCUR;
-    } else if (signal == SAME_ID_DIFF_OTHER_QUERYED) {
-        // If the request with same session id is queried, add to the queue and respond to it
-        free(node->filename);
-        free(node);
     }
     pthread_mutex_unlock(&(queue->mutex));
     // end of queue process
