@@ -286,7 +286,8 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     // process request queue
     struct node *node = new_node(filename, id, starting, len_data);
     pthread_mutex_lock(&(queue->mutex));
-    uint8_t signal = list_contains(queue, node);
+    struct node* existing = NULL;
+    uint8_t signal = list_contains(queue, node, &existing);
     if (signal == NON_EXIST || signal == SAME_ID_DIFF_OTHER_QUERIED) {
         // If the request does not exist, add to the queue and respond to it
         add_node(queue, node);
@@ -306,8 +307,11 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         free_node(node);
         pthread_mutex_unlock(&(queue->mutex));
         return ERROR_OCCUR;
+    } else if (signal == EXIST_QUERYING){
+        node = existing;
     }
     pthread_mutex_unlock(&(queue->mutex));
+
     // end of queue process
     if (signal == NON_EXIST || signal == SAME_ID_DIFF_OTHER_QUERIED){
         // open and read the file

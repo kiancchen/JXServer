@@ -34,7 +34,7 @@ struct linked_list {
 
 struct node *new_node(char *filename, uint32_t id, uint64_t starting, uint64_t length);
 
-uint8_t list_contains(struct linked_list *linked_list, struct node *node);
+uint8_t list_contains(struct linked_list *linked_list, struct node *node, struct node** existing);
 
 void add_node(struct linked_list* linked_list, struct node *node);
 

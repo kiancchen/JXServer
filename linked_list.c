@@ -31,7 +31,7 @@ struct node *new_node(char *filename, uint32_t id, uint64_t starting, uint64_t l
  * @param node The node to be looked for
  * @return The existing status of the ndoe
  */
-uint8_t list_contains(struct linked_list *linked_list, struct node *node) {
+uint8_t list_contains(struct linked_list *linked_list, struct node *node, struct node** existing) {
     struct node *cur = linked_list->head;
     uint8_t temp = NON_EXIST;
     struct node *temp_node = NULL;
@@ -41,6 +41,7 @@ uint8_t list_contains(struct linked_list *linked_list, struct node *node) {
                 cur->length == node->length) {
                 if (cur->querying == 1) {
                     // This query is ongoing
+                    *existing = cur;
                     return EXIST_QUERYING;
                 } else {
                     // This query is finished
