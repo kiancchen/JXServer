@@ -312,7 +312,6 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         free_node(node);
         node = existing;
     }
-    pthread_mutex_unlock(&(queue->mutex));
 
     // end of queue process
     if (signal == NON_EXIST || signal == SAME_ID_DIFF_OTHER_QUERIED) {
@@ -330,7 +329,8 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         fread(node->multiplex->buffer, sizeof(char), sz, f);
         fclose(f);
     }
-
+    pthread_mutex_unlock(&(queue->mutex));
+    // loop until the complete content of the file is sent
     while (1) {
         pthread_mutex_lock(&(node->mutex));
         if (!node->querying) {
@@ -343,26 +343,26 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
 
         starting = node->starting + node->multiplex->sent_size;
         if (node->length - node->multiplex->sent_size >= 500) {
+            // Send 500 bytes each time
             node->multiplex->sent_size += 500;
             len_data = 500;
             if (node->length == node->multiplex->sent_size) {
                 node->querying = 0;
             }
         } else {
+            // Send remaining bytes that less than 500
             len_data = node->length - node->multiplex->sent_size;
             node->multiplex->sent_size = node->length;
             node->querying = 0;
         }
         pthread_mutex_unlock(&(node->mutex));
-
+        printf("%p \n", node->multiplex->buffer);
         uint8_t *sent_data = malloc(sizeof(uint8_t) * len_data);
         memcpy(sent_data, node->multiplex->buffer + starting, len_data);
-//    uint32_t id_network = htobe32(node->id);
+
         uint64_t starting_network = htobe64(starting);
         uint64_t len_data_network = htobe64(len_data);
-//    printf("%lu\n", len_data);
-//    printf("%lu\n", len_data_network);
-//    memcpy(request_payload, &id_network, sizeof(uint32_t));
+
         memcpy(request_payload + 4, &starting_network, sizeof(uint64_t));
         memcpy(request_payload + 12, &len_data_network, sizeof(uint64_t));
 
