@@ -308,6 +308,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         pthread_mutex_unlock(&(queue->mutex));
         return ERROR_OCCUR;
     } else if (signal == EXIST_QUERYING) {
+        free(filename);
         free_node(node);
         node = existing;
     }
