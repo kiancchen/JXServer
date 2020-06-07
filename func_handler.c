@@ -330,17 +330,18 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         fclose(f);
     }
 
-
+    pthread_mutex_lock(&(node->mutex));
     //make the file_data
-    uint8_t *file_data = malloc(sizeof(uint8_t) * node->multiplex->buffer_size);
-    memcpy(file_data, node->multiplex->buffer + starting, node->multiplex->buffer_size);
+    uint8_t *file_data = malloc(sizeof(uint8_t) * node->length);
+    memcpy(file_data, node->multiplex->buffer + starting, node->length);
 
     // Concatenate the payloads
-    length = node->multiplex->buffer_size + RETRIEVE_INFO_LEN;
+    length = node->length + RETRIEVE_INFO_LEN;
     uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
     memcpy(uncompressed_payload, request_payload, 20);
-    memcpy(uncompressed_payload + 20, file_data, node->multiplex->buffer_size);
+    memcpy(uncompressed_payload + 20, file_data, node->length);
     free(file_data);
+    pthread_mutex_unlock(&(node->mutex));
     // make the response
     uint8_t *response;
     if (request->header->req_compress == (unsigned) 0) {
