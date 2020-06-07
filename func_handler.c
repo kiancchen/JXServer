@@ -334,7 +334,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     if (!node->querying){
         send_empty_retrieve(data->connect_fd);
         free(request_payload);
-        pthread_mutex_unlock(&(queue->mutex));
+        pthread_mutex_unlock(&(node->mutex));
         return SUCCESS;
     }
     //make the file_data
