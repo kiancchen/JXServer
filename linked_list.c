@@ -18,8 +18,12 @@ struct node *new_node(char *filename, uint32_t id, uint64_t starting, uint64_t l
     node->length = length;
     node->next = NULL;
     node->querying = 1;
+    pthread_mutex_init(node->mutex);
+    node->multiplex = malloc(sizeof(struct multiplex));
     return node;
 }
+
+
 
 /**
  * Check if the linked list contains the specific node
@@ -35,17 +39,21 @@ uint8_t list_contains(struct linked_list *linked_list, struct node *node) {
         if (cur->id == node->id) {
             if (strcmp(cur->filename, node->filename) == 0 && cur->starting == node->starting &&
                 cur->length == node->length) {
-                return EXIST;
+                if (cur->querying == 1) {
+                    // This query is ongoing
+                    return EXIST_QUERYING;
+                } else {
+                    // This query is finished
+                    return EXIST_QUERIED
+                }
             } else {
                 if (cur->querying == 1) {
                     // This query is ongoing
                     return SAME_ID_DIFF_OTHER_QUERYING;
                 } else {
                     // This query is finished
-
-                    cur->querying = 1; // Change to ongoing status
                     temp_node = cur;
-                    temp = SAME_ID_DIFF_OTHER_QUERYED;
+                    temp = SAME_ID_DIFF_OTHER_QUERIED;
                 }
             }
         }
@@ -86,8 +94,14 @@ void destroy_linked_list(struct linked_list *linked_list) {
     while (cur != NULL) {
         struct node *temp = cur;
         cur = cur->next;
-        free(temp->filename);
-        free(temp);
+        free_node(temp);
     }
 
+}
+
+void free_node(struct node *temp) {
+    free(temp->multiplex->buffer);
+    free(temp->multiplex);
+    free(temp->filename);
+    free(temp);
 }

@@ -287,16 +287,15 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     struct node *node = new_node(filename, id, starting, len_data);
     pthread_mutex_lock(&(queue->mutex));
     uint8_t signal = list_contains(queue, node);
-    if (signal == NON_EXIST) {
+    if (signal == NON_EXIST || signal == SAME_ID_DIFF_OTHER_QUERIED) {
         // If the request does not exist, add to the queue and respond to it
         add_node(queue, node);
-    } else if (signal == EXIST || signal == SAME_ID_DIFF_OTHER_QUERYED) {
+    } else if (signal == EXIST_QUERIED) {
         // If the request exists, send an empty response
         send_empty_retrieve(data->connect_fd);
         free(filename);
         free(request_payload);
-        free(node->filename);
-        free(node);
+        free_node(node);
         pthread_mutex_unlock(&(queue->mutex));
         return ERROR_OCCUR;
     } else if (signal == SAME_ID_DIFF_OTHER_QUERYING) {
@@ -304,32 +303,34 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         send_error(data->connect_fd);
         free(filename);
         free(request_payload);
-        free(node->filename);
-        free(node);
+        free_node(node);
         pthread_mutex_unlock(&(queue->mutex));
         return ERROR_OCCUR;
     }
     pthread_mutex_unlock(&(queue->mutex));
     // end of queue process
-
-    // open and read the file
-    FILE *f = fopen(filename, "r");
-    free(filename);
-    size_t sz;
-    if (!f || (starting + len_data) > (sz = file_size(f))) {
-        // If the file cannot be opened or the range is bad
-        send_error(data->connect_fd);
-        free(request_payload);
-        return ERROR_OCCUR;
+    if (signal == NON_EXIST){
+        // open and read the file
+        FILE *f = fopen(filename, "r");
+        free(filename);
+        size_t sz;
+        if (!f || (starting + len_data) > (sz = file_size(f))) {
+            // If the file cannot be opened or the range is bad
+            send_error(data->connect_fd);
+            free(request_payload);
+            return ERROR_OCCUR;
+        }
+        node->multiplex->buffer_size = sz;
+        node->multiplex->buffer = malloc(sizeof(char) * sz);
+        fread(node->multiplex->buffer, sizeof(char), sz, f);
+        fclose(f);
     }
-    char *buffer = malloc(sizeof(char) * sz);
-    fread(buffer, sizeof(char), sz, f);
-    fclose(f);
+
 
     //make the file_data
     uint8_t *file_data = malloc(sizeof(uint8_t) * len_data);
-    memcpy(file_data, buffer + starting, len_data);
-    free(buffer);
+    memcpy(file_data, node->multiplex->buffer + starting, len_data);
+
     // Concatenate the payloads
     length = len_data + RETRIEVE_INFO_LEN;
     uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
