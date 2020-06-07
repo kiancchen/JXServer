@@ -11,7 +11,6 @@
 
 struct multiplex{
     char* buffer;
-    uint64_t buffer_size;
     uint64_t sent_size;
 };
 

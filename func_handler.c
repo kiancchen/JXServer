@@ -273,7 +273,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     uint64_t length;
     uint8_t *request_payload;
     decompress_payload(dict, request, &request_payload, &length);
-    // get the information from the file_data: session id; starting offset; data length;
+    // get the information from the sent_data: session id; starting offset; data length;
     uint32_t id;
     uint64_t starting;
     uint64_t len_data;
@@ -324,7 +324,6 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
             free(request_payload);
             return ERROR_OCCUR;
         }
-        node->multiplex->buffer_size = sz;
         node->multiplex->buffer = malloc(sizeof(char) * sz);
         fread(node->multiplex->buffer, sizeof(char), sz, f);
         fclose(f);
@@ -337,22 +336,38 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         pthread_mutex_unlock(&(node->mutex));
         return SUCCESS;
     }
-    //make the file_data
-    uint8_t *file_data = malloc(sizeof(uint8_t) * node->length);
-    memcpy(file_data, node->multiplex->buffer + starting, node->length);
-    node->multiplex->sent_size += node->length;
-    if (node->multiplex->sent_size == node->length) {
+    // Make the sent_data
+
+    starting = node->starting + node->multiplex->sent_size;
+    if (node->length - node->multiplex->sent_size >= 500){
+        node->multiplex->sent_size += 500;
+        len_data = 500;
+        if (node->length == node->multiplex->sent_size) {
+            node->querying = 0;
+        }
+    }else{
+        len_data = node->length + node->multiplex->sent_size;
+        node->multiplex->sent_size = node->length;
         node->querying = 0;
     }
+    pthread_mutex_unlock(&(node->mutex));
+
+    uint8_t *sent_data = malloc(sizeof(uint8_t) * len_data);
+    memcpy(sent_data, node->multiplex->buffer + starting, len_data);
+
+    memcpy(request_payload, &id, sizeof(uint32_t));
+    memcpy(request_payload+4, &starting, sizeof(uint64_t));
+    memcpy(request_payload+8, &len_data, sizeof(uint64_t));
+
 
     // Concatenate the payloads
-    length = node->length + RETRIEVE_INFO_LEN;
+    length = RETRIEVE_INFO_LEN + len_data;
     uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
     memcpy(uncompressed_payload, request_payload, 20);
-    memcpy(uncompressed_payload + 20, file_data, node->length);
-    free(file_data);
+    memcpy(uncompressed_payload + 20, sent_data, len_data);
+    free(sent_data);
 
-    // make the response
+    // Make the response
     uint8_t *response;
     if (request->header->req_compress == (unsigned) 0) {
         // If it does not need compression
@@ -365,7 +380,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     free(uncompressed_payload);
     free(response);
 
-    pthread_mutex_unlock(&(node->mutex));
+
     free(request_payload);
     return SUCCESS;
 }
