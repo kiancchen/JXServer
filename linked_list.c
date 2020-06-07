@@ -42,6 +42,7 @@ uint8_t list_contains(struct linked_list *linked_list, struct node *node) {
                     return SAME_ID_DIFF_OTHER_QUERYING;
                 } else {
                     // This query is finished
+
                     cur->querying = 1; // Change to ongoing status
                     temp_node = cur;
                     temp = SAME_ID_DIFF_OTHER_QUERYED;
