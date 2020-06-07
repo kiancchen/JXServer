@@ -346,7 +346,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
             node->querying = 0;
         }
     }else{
-        len_data = node->length + node->multiplex->sent_size;
+        len_data = node->length - node->multiplex->sent_size;
         node->multiplex->sent_size = node->length;
         node->querying = 0;
     }
