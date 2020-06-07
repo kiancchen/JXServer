@@ -309,7 +309,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     }
     pthread_mutex_unlock(&(queue->mutex));
     // end of queue process
-    if (signal == NON_EXIST){
+    if (signal == NON_EXIST || signal == SAME_ID_DIFF_OTHER_QUERIED){
         // open and read the file
         FILE *f = fopen(filename, "r");
         free(filename);
