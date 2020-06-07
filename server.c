@@ -245,7 +245,7 @@ int main(int argc, char **argv) {
 
     // Wait the client to connect
     // SOMAXCONN = The max number of outstanding connections in the socket's listen queue. Normally 128.
-    if (listen(listenfd, SOMAXCONN) < 0) {
+    if (listen(listenfd, 1024) < 0) {
         perror("listen_listenfd error");
         exit(EXIT_FAILURE);
     }

@@ -259,7 +259,7 @@ uint8_t file_size_handler(const struct data *data, struct dict *dict, char *dir_
 }
 
 /**
- * Handle t he retrieve file functionality
+ * Handle the retrieve file functionality
  * @param data The data stores the connect fd
  * @param dict The code dictionary
  * @param dir_path The directory path
