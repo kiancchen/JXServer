@@ -362,8 +362,8 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
 //    printf("%lu\n", len_data);
 //    printf("%lu\n", len_data_network);
 //    memcpy(request_payload, &id_network, sizeof(uint32_t));
-        memcpy(request_payload + 4, &starting, sizeof(uint64_t));
-        memcpy(request_payload + 12, &len_data, sizeof(uint64_t));
+        memcpy(request_payload + 4, &starting_network, sizeof(uint64_t));
+        memcpy(request_payload + 12, &len_data_network, sizeof(uint64_t));
 
 
         // Concatenate the payloads
