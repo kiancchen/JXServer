@@ -334,7 +334,10 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     //make the file_data
     uint8_t *file_data = malloc(sizeof(uint8_t) * node->length);
     memcpy(file_data, node->multiplex->buffer + starting, node->length);
-
+    node->multiplex->sent_size += node->length;
+    if (node->multiplex->sent_size == node->length) {
+        node->querying = 0;
+    }
     // Concatenate the payloads
     length = node->length + RETRIEVE_INFO_LEN;
     uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
@@ -351,7 +354,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         // If it does not need compression
         compress_response(dict, &response, uncompressed_payload, &length, 0x7);
     }
-    node->querying = 0;
+
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
     free(request_payload);
     free(uncompressed_payload);

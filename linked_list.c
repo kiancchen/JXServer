@@ -18,9 +18,9 @@ struct node *new_node(char *filename, uint32_t id, uint64_t starting, uint64_t l
     node->length = length;
     node->next = NULL;
     node->querying = 1;
+    node->multiplex = malloc(sizeof(struct multiplex));
     node->multiplex->sent_size = 0;
     pthread_mutex_init(&(node->mutex), NULL);
-    node->multiplex = malloc(sizeof(struct multiplex));
     return node;
 }
 
