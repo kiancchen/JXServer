@@ -330,61 +330,63 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         fclose(f);
     }
 
-    pthread_mutex_lock(&(node->mutex));
-    if (!node->querying){
-        send_empty_retrieve(data->connect_fd);
-        free(request_payload);
-        pthread_mutex_unlock(&(node->mutex));
-        return SUCCESS;
-    }
-    // Make the sent_data
+    while (1) {
+        pthread_mutex_lock(&(node->mutex));
+        if (!node->querying) {
+            send_empty_retrieve(data->connect_fd);
+            free(request_payload);
+            pthread_mutex_unlock(&(node->mutex));
+            return SUCCESS;
+        }
+        // Make the sent_data
 
-    starting = node->starting + node->multiplex->sent_size;
-    if (node->length - node->multiplex->sent_size >= 500){
-        node->multiplex->sent_size += 500;
-        len_data = 500;
-        if (node->length == node->multiplex->sent_size) {
+        starting = node->starting + node->multiplex->sent_size;
+        if (node->length - node->multiplex->sent_size >= 500) {
+            node->multiplex->sent_size += 500;
+            len_data = 500;
+            if (node->length == node->multiplex->sent_size) {
+                node->querying = 0;
+            }
+        } else {
+            len_data = node->length - node->multiplex->sent_size;
+            node->multiplex->sent_size = node->length;
             node->querying = 0;
         }
-    }else{
-        len_data = node->length - node->multiplex->sent_size;
-        node->multiplex->sent_size = node->length;
-        node->querying = 0;
-    }
-    pthread_mutex_unlock(&(node->mutex));
+        pthread_mutex_unlock(&(node->mutex));
 
-    uint8_t *sent_data = malloc(sizeof(uint8_t) * len_data);
-    memcpy(sent_data, node->multiplex->buffer + starting, len_data);
+        uint8_t *sent_data = malloc(sizeof(uint8_t) * len_data);
+        memcpy(sent_data, node->multiplex->buffer + starting, len_data);
 //    uint32_t id_network = htobe32(node->id);
-//    uint64_t starting_network = htobe64(starting);
-//    uint64_t len_data_network = htobe64(len_data);
+        uint64_t starting_network = htobe64(starting);
+        uint64_t len_data_network = htobe64(len_data);
 //    printf("%lu\n", len_data);
 //    printf("%lu\n", len_data_network);
 //    memcpy(request_payload, &id_network, sizeof(uint32_t));
-    memcpy(request_payload+4, &starting, sizeof(uint64_t));
-    memcpy(request_payload+12, &len_data, sizeof(uint64_t));
+        memcpy(request_payload + 4, &starting, sizeof(uint64_t));
+        memcpy(request_payload + 12, &len_data, sizeof(uint64_t));
 
 
-    // Concatenate the payloads
-    length = RETRIEVE_INFO_LEN + len_data;
-    uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
-    memcpy(uncompressed_payload, request_payload, 20);
-    memcpy(uncompressed_payload + 20, sent_data, len_data);
-    free(sent_data);
+        // Concatenate the payloads
+        length = RETRIEVE_INFO_LEN + len_data;
+        uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
+        memcpy(uncompressed_payload, request_payload, 20);
+        memcpy(uncompressed_payload + 20, sent_data, len_data);
+        free(sent_data);
 
-    // Make the response
-    uint8_t *response;
-    if (request->header->req_compress == (unsigned) 0) {
-        // If it does not need compression
-        uncompressed_response(&response, uncompressed_payload, &length, 0x7);
-    } else {
-        // If it does not need compression
-        compress_response(dict, &response, uncompressed_payload, &length, 0x7);
+        // Make the response
+        uint8_t *response;
+        if (request->header->req_compress == (unsigned) 0) {
+            // If it does not need compression
+            uncompressed_response(&response, uncompressed_payload, &length, 0x7);
+        } else {
+            // If it does not need compression
+            compress_response(dict, &response, uncompressed_payload, &length, 0x7);
+        }
+        send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+        free(uncompressed_payload);
+        free(response);
+        free(request_payload);
     }
-    send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
-    free(uncompressed_payload);
-    free(response);
-    free(request_payload);
     return SUCCESS;
 }
 
