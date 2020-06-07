@@ -354,10 +354,12 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
 
     uint8_t *sent_data = malloc(sizeof(uint8_t) * len_data);
     memcpy(sent_data, node->multiplex->buffer + starting, len_data);
-
-//    memcpy(request_payload, &id, sizeof(uint32_t));
-    memcpy(request_payload+4, &starting, sizeof(uint64_t));
-    memcpy(request_payload+8, &len_data, sizeof(uint64_t));
+    uint32_t id_network = htobe32(node->id);
+    uint64_t starting_network = htobe64(starting);
+    uint64_t len_data_network = htobe64(len_data);
+//    memcpy(request_payload, &id_network, sizeof(uint32_t));
+    memcpy(request_payload+4, &starting_network, sizeof(uint64_t));
+    memcpy(request_payload+12, &len_data_network, sizeof(uint64_t));
 
 
     // Concatenate the payloads
@@ -379,8 +381,6 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
     free(uncompressed_payload);
     free(response);
-
-
     free(request_payload);
     return SUCCESS;
 }
