@@ -95,13 +95,13 @@ void destroy_linked_list(struct linked_list *linked_list) {
     while (cur != NULL) {
         struct node *temp = cur;
         cur = cur->next;
+        free(temp->multiplex->buffer);
         free_node(temp);
     }
 
 }
 
 void free_node(struct node *temp) {
-    free(temp->multiplex->buffer);
     free(temp->multiplex);
     free(temp->filename);
     free(temp);
