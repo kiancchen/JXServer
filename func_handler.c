@@ -286,7 +286,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     // process request queue
     struct node *node = new_node(filename, id, starting, len_data);
     pthread_mutex_lock(&(queue->mutex));
-    struct node* existing = NULL;
+    struct node *existing = NULL;
     uint8_t signal = list_contains(queue, node, &existing);
     if (signal == NON_EXIST || signal == SAME_ID_DIFF_OTHER_QUERIED) {
         // If the request does not exist, add to the queue and respond to it
@@ -307,13 +307,13 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
         free_node(node);
         pthread_mutex_unlock(&(queue->mutex));
         return ERROR_OCCUR;
-    } else if (signal == EXIST_QUERYING){
+    } else if (signal == EXIST_QUERYING) {
         node = existing;
     }
     pthread_mutex_unlock(&(queue->mutex));
 
     // end of queue process
-    if (signal == NON_EXIST || signal == SAME_ID_DIFF_OTHER_QUERIED){
+    if (signal == NON_EXIST || signal == SAME_ID_DIFF_OTHER_QUERIED) {
         // open and read the file
         FILE *f = fopen(filename, "r");
         free(filename);
@@ -331,6 +331,12 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     }
 
     pthread_mutex_lock(&(node->mutex));
+    if (!node->querying){
+        send_empty_retrieve(data->connect_fd);
+        free(request_payload);
+        pthread_mutex_unlock(&(queue->mutex));
+        return SUCCESS;
+    }
     //make the file_data
     uint8_t *file_data = malloc(sizeof(uint8_t) * node->length);
     memcpy(file_data, node->multiplex->buffer + starting, node->length);
@@ -338,27 +344,28 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     if (node->multiplex->sent_size == node->length) {
         node->querying = 0;
     }
-    if (node->querying){
-        // Concatenate the payloads
-        length = node->length + RETRIEVE_INFO_LEN;
-        uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
-        memcpy(uncompressed_payload, request_payload, 20);
-        memcpy(uncompressed_payload + 20, file_data, node->length);
-        free(file_data);
-        pthread_mutex_unlock(&(node->mutex));
-        // make the response
-        uint8_t *response;
-        if (request->header->req_compress == (unsigned) 0) {
-            // If it does not need compression
-            uncompressed_response(&response, uncompressed_payload, &length, 0x7);
-        } else {
-            // If it does not need compression
-            compress_response(dict, &response, uncompressed_payload, &length, 0x7);
-        }
-        send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
-        free(uncompressed_payload);
-        free(response);
+
+    // Concatenate the payloads
+    length = node->length + RETRIEVE_INFO_LEN;
+    uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
+    memcpy(uncompressed_payload, request_payload, 20);
+    memcpy(uncompressed_payload + 20, file_data, node->length);
+    free(file_data);
+
+    // make the response
+    uint8_t *response;
+    if (request->header->req_compress == (unsigned) 0) {
+        // If it does not need compression
+        uncompressed_response(&response, uncompressed_payload, &length, 0x7);
+    } else {
+        // If it does not need compression
+        compress_response(dict, &response, uncompressed_payload, &length, 0x7);
     }
+    send(data->connect_fd, response, sizeof(uint8_t) * length, 0);
+    free(uncompressed_payload);
+    free(response);
+
+    pthread_mutex_unlock(&(node->mutex));
     free(request_payload);
     return SUCCESS;
 }
