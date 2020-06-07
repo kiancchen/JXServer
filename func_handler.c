@@ -356,7 +356,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
             node->querying = 0;
         }
         pthread_mutex_unlock(&(node->mutex));
-        printf("%p \n", node->multiplex->buffer);
+
         uint8_t *sent_data = malloc(sizeof(uint8_t) * len_data);
         memcpy(sent_data, node->multiplex->buffer + starting, len_data);
 
