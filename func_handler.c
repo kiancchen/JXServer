@@ -354,7 +354,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
 
     uint8_t *sent_data = malloc(sizeof(uint8_t) * len_data);
     memcpy(sent_data, node->multiplex->buffer + starting, len_data);
-    uint32_t id_network = htobe32(node->id);
+//    uint32_t id_network = htobe32(node->id);
     uint64_t starting_network = htobe64(starting);
     uint64_t len_data_network = htobe64(len_data);
 //    memcpy(request_payload, &id_network, sizeof(uint32_t));
