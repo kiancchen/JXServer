@@ -332,14 +332,14 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
 
 
     //make the file_data
-    uint8_t *file_data = malloc(sizeof(uint8_t) * len_data);
-    memcpy(file_data, node->multiplex->buffer + starting, len_data);
+    uint8_t *file_data = malloc(sizeof(uint8_t) * node->multiplex->buffer_size);
+    memcpy(file_data, node->multiplex->buffer + starting, node->multiplex->buffer_size);
 
     // Concatenate the payloads
-    length = len_data + RETRIEVE_INFO_LEN;
+    length = node->multiplex->buffer_size + RETRIEVE_INFO_LEN;
     uint8_t *uncompressed_payload = malloc(sizeof(uint8_t) * length);
     memcpy(uncompressed_payload, request_payload, 20);
-    memcpy(uncompressed_payload + 20, file_data, len_data);
+    memcpy(uncompressed_payload + 20, file_data, node->multiplex->buffer_size);
     free(file_data);
     // make the response
     uint8_t *response;
