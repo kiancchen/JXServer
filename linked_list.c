@@ -44,7 +44,7 @@ uint8_t list_contains(struct linked_list *linked_list, struct node *node) {
                     return EXIST_QUERYING;
                 } else {
                     // This query is finished
-                    return EXIST_QUERIED
+                    return EXIST_QUERIED;
                 }
             } else {
                 if (cur->querying == 1) {
