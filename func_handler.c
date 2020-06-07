@@ -355,7 +355,7 @@ uint8_t retrieve_handler(const struct data *data, struct dict *dict, char *dir_p
     uint8_t *sent_data = malloc(sizeof(uint8_t) * len_data);
     memcpy(sent_data, node->multiplex->buffer + starting, len_data);
 
-    memcpy(request_payload, &id, sizeof(uint32_t));
+//    memcpy(request_payload, &id, sizeof(uint32_t));
     memcpy(request_payload+4, &starting, sizeof(uint64_t));
     memcpy(request_payload+8, &len_data, sizeof(uint64_t));
 
